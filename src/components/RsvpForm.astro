@@ -58,19 +58,16 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
       <div>
         <label for="rsvp-extra-guest" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
-          ¿Deseas consultar por un acompañante adicional? (Opcional)
+          ¿Asistes con tu familia o tienes alguna nota? (Opcional)
         </label>
         <input
           id="rsvp-extra-guest"
           name="extraGuest"
           type="text"
-          maxlength="120"
-          placeholder="Si vienes con alguien que no está en la lista, indícanos su nombre aquí"
+          maxlength="160"
+          placeholder="Ej: Asisto con mi familia / Nombres o comentario"
           class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-3 text-sm text-[#2b181b] placeholder-[#2b181b]/45 outline-none transition focus:border-[#9b1b30]"
         />
-        <p class="mt-1.5 text-[11px] text-[#2b181b]/65">
-          Esta invitación es personal; si necesitas incluir a alguien más, lo revisaremos con mucho cariño.
-        </p>
       </div>
 
       <button
@@ -123,7 +120,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
     }
 
     const savedRsvp = getSavedRsvpStatus();
-    if (savedRsvp && confirmationBox && confirmationDetail) {
+    if (savedRsvp && /\(\d+\s*acompañantes\)/i.test(savedRsvp)) {
+      localStorage.removeItem('xv_arianna_rsvp_status');
+    } else if (savedRsvp && confirmationBox && confirmationDetail) {
       confirmationBox.classList.remove('hidden');
       confirmationDetail.textContent = `Estado guardado: ${savedRsvp}. Si necesitas actualizarlo, envía el formulario nuevamente.`;
     }
@@ -136,7 +135,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
         const asistencia = statusSelect?.value ?? 'Sí asistiré';
         const extraGuest = extraGuestInput?.value.trim() ?? '';
         const asistenciaFinal = extraGuest
-          ? `${asistencia} · Acompañante adicional: ${extraGuest}`
+          ? `${asistencia} · Nota/Familia: ${extraGuest}`
           : asistencia;
 
         if (nombre.length < 2) {
@@ -184,7 +183,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
         if (confirmationBox && confirmationDetail) {
           confirmationBox.classList.remove('hidden');
           confirmationDetail.textContent = extraGuest
-            ? `${nombre} — ${asistencia} (Acompañante adicional: ${extraGuest}).`
+            ? `${nombre} — ${asistencia} (${extraGuest}).`
             : `${nombre} — ${asistencia}.`;
         }
 
