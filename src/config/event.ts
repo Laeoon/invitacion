@@ -30,39 +30,38 @@ export const EVENT_CONFIG = {
   locations: [
     {
       title: 'Ceremonia y Recepción',
-      time: '(hora)',
-      place: '(lugar)',
-      address: '(dirección)',
-      googleMapsUrl: 'https://maps.google.com/?q=(lugar)',
+      time: '9:00 PM',
+      place: 'La Chapa, Calle Sucre, Casa N° 26',
+      address: 'La Chapa, Calle Sucre, Casa N° 26',
+      googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=La+Chapa+Calle+Sucre+Casa+26',
     },
   ] satisfies EventLocation[],
   itinerary: [
     {
-      time: '(hora)',
-      title: 'Recepción',
-      description: '(detalle)',
+      time: '9:00 PM',
+      title: 'Llegada y Recepción',
+      description: 'Bienvenida a los invitados.',
     },
     {
-      time: '(hora)',
-      title: 'Vals',
-      description: '(detalle)',
+      time: '11:00 PM',
+      title: 'Entrada de la Quinceañera',
+      description: 'Salida especial de Arianna.',
     },
     {
-      time: '(hora)',
-      title: 'Brindis',
-      description: '(detalle)',
+      time: '12:00 AM',
+      title: 'Brindis y Vals',
+      description: 'Brindis, vals y comienzo de la celebración.',
     },
     {
-      time: '(hora)',
+      time: 'A partir de las 12:00 AM',
       title: 'Fiesta',
-      description: '(detalle)',
+      description: 'Música y baile hasta el amanecer.',
     },
   ] satisfies ItineraryItem[],
   dressCode: {
     label: 'Opcional · Recomendaciones',
     note: 'Estas tonalidades son solo una guía opcional para acompañarnos en armonía.',
     suggestedColors: [
-      { name: 'Beige', hex: '#E8DCC4' },
       { name: 'Blanco', hex: '#FFFFFF' },
       { name: 'Negro', hex: '#1F1A1B' },
       { name: 'Borgoña', hex: '#6D1322' },
@@ -71,6 +70,7 @@ export const EVENT_CONFIG = {
     reservedColors: [
       { name: 'Dorado', hex: '#D4AF37' },
       { name: 'Rojo', hex: '#9B1B30' },
+      { name: 'Beige', hex: '#E8DCC4' },
     ] satisfies ColorSwatch[],
   },
   gifts: {
