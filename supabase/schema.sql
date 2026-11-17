@@ -1,6 +1,3 @@
--- Ejecuta este script en el SQL Editor de tu proyecto nuevo en Supabase
-
--- 1. Tabla de invitados (visitas + confirmaciones RSVP)
 create table if not exists public.invitados (
   id uuid primary key default gen_random_uuid(),
   nombre text not null,
@@ -24,14 +21,24 @@ create policy "Permitir registro publico de invitados"
   to anon, authenticated
   with check (true);
 
--- 2. Tabla de fotos del album de la fiesta
+drop policy if exists "Solo admin puede borrar invitados" on public.invitados;
+create policy "Solo admin puede borrar invitados"
+  on public.invitados for delete
+  to authenticated
+  using (true);
+
 create table if not exists public.album_fotos (
   id uuid primary key default gen_random_uuid(),
   autor text not null,
   url text not null,
   caption text,
+  owner_token text,
+  storage_path text,
   created_at timestamptz not null default now()
 );
+
+alter table public.album_fotos add column if not exists owner_token text;
+alter table public.album_fotos add column if not exists storage_path text;
 
 alter table public.album_fotos enable row level security;
 
@@ -47,7 +54,32 @@ create policy "Permitir subir fotos al album"
   to anon, authenticated
   with check (true);
 
--- 3. Bucket de Storage para las fotos
+drop policy if exists "Solo admin puede borrar fotos" on public.album_fotos;
+create policy "Solo admin puede borrar fotos"
+  on public.album_fotos for delete
+  to authenticated
+  using (true);
+
+create or replace function public.delete_own_photo(p_photo_id uuid, p_owner_token text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_deleted integer;
+begin
+  delete from public.album_fotos
+  where id = p_photo_id
+    and owner_token = p_owner_token;
+
+  get diagnostics v_deleted = row_count;
+  return v_deleted > 0;
+end;
+$$;
+
+grant execute on function public.delete_own_photo(uuid, text) to anon, authenticated;
+
 insert into storage.buckets (id, name, public)
 values ('album-fiesta', 'album-fiesta', true)
 on conflict (id) do update set public = true;
@@ -63,3 +95,9 @@ create policy "Subida publica album-fiesta"
   on storage.objects for insert
   to anon, authenticated
   with check (bucket_id = 'album-fiesta');
+
+drop policy if exists "Solo admin borra archivos album-fiesta" on storage.objects;
+create policy "Solo admin borra archivos album-fiesta"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'album-fiesta');

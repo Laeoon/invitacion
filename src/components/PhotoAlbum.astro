@@ -155,8 +155,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 <script>
   import { compressImageFile } from '../services/imageCompressor';
-  import { getSavedGuestName, saveGuestName } from '../services/sheets';
+  import { getOrCreateDeviceToken, getSavedGuestName, saveGuestName } from '../services/sheets';
   import {
+    deleteOwnAlbumPhoto,
     fetchAlbumPhotos,
     getSupabaseClient,
     uploadAlbumPhoto,
@@ -195,6 +196,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
     let activeIndex: number | null = null;
     let previewObjectUrl: string | null = null;
     let touchStartX = 0;
+    const deviceToken = getOrCreateDeviceToken();
 
     const savedName = getSavedGuestName();
     if (savedName && authorInput) {
@@ -304,17 +306,42 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
         authorEl.textContent = photo.autor;
         textWrap.appendChild(authorEl);
 
+        const actionsRow = document.createElement('div');
+        actionsRow.className = 'mt-3 flex gap-2';
+
         const dlBtn = document.createElement('button');
         dlBtn.type = 'button';
         dlBtn.className =
-          'mt-3 w-full cursor-pointer rounded-lg border border-[#c89d54]/55 bg-[#faf5ec] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#7a1320] transition hover:bg-[#f3e8d2]';
+          'flex-1 cursor-pointer rounded-lg border border-[#c89d54]/55 bg-[#faf5ec] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#7a1320] transition hover:bg-[#f3e8d2]';
         dlBtn.textContent = 'Descargar';
         dlBtn.addEventListener('click', () => {
           void downloadPhoto(photo.url, `polaroid-arianna-${photo.id.slice(0, 6)}.webp`);
         });
+        actionsRow.appendChild(dlBtn);
+
+        if (photo.owner_token && photo.owner_token === deviceToken) {
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className =
+            'cursor-pointer rounded-lg border border-[#9b1b30]/40 bg-[#9b1b30]/10 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9b1b30] transition hover:bg-[#9b1b30] hover:text-white';
+          delBtn.textContent = 'Borrar';
+          delBtn.addEventListener('click', async () => {
+            delBtn.disabled = true;
+            const deleted = await deleteOwnAlbumPhoto(client, photo.id, deviceToken);
+            if (deleted) {
+              showToast('Polaroid eliminada');
+              const photos = await fetchAlbumPhotos(client);
+              renderPhotos(photos);
+            } else {
+              delBtn.disabled = false;
+              showToast('No se pudo eliminar la Polaroid');
+            }
+          });
+          actionsRow.appendChild(delBtn);
+        }
 
         body.appendChild(textWrap);
-        body.appendChild(dlBtn);
+        body.appendChild(actionsRow);
         card.appendChild(imgBtn);
         card.appendChild(body);
         grid.appendChild(card);
@@ -432,7 +459,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
         try {
           const compressed = await compressImageFile(file);
-          const result = await uploadAlbumPhoto(client, compressed, autor, caption);
+          const result = await uploadAlbumPhoto(client, compressed, autor, caption, deviceToken);
 
           if (result.photo) {
             showToast('¡Polaroid publicada en el muro!');

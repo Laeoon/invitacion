@@ -1,10 +1,12 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 
 export interface AlbumPhoto {
   id: string;
   autor: string;
   url: string;
   caption: string | null;
+  owner_token: string | null;
+  storage_path: string | null;
   created_at: string;
 }
 
@@ -13,6 +15,16 @@ export interface GuestRegistration {
   asistencia: string;
   acompanantes?: number;
   dispositivo: string;
+}
+
+export interface GuestRecord extends GuestRegistration {
+  id: string;
+  created_at: string;
+}
+
+export interface UploadPhotoResult {
+  photo: AlbumPhoto | null;
+  error: string | null;
 }
 
 let cachedClient: SupabaseClient | null = null;
@@ -52,7 +64,7 @@ export async function fetchAlbumPhotos(client: SupabaseClient | null): Promise<A
 
   const { data, error } = await client
     .from('album_fotos')
-    .select('id, autor, url, caption, created_at')
+    .select('id, autor, url, caption, owner_token, storage_path, created_at')
     .order('created_at', { ascending: false });
 
   if (error || !data) {
@@ -62,16 +74,12 @@ export async function fetchAlbumPhotos(client: SupabaseClient | null): Promise<A
   return data;
 }
 
-export interface UploadPhotoResult {
-  photo: AlbumPhoto | null;
-  error: string | null;
-}
-
 export async function uploadAlbumPhoto(
   client: SupabaseClient | null,
   blob: Blob,
   autor: string,
-  caption: string
+  caption: string,
+  ownerToken: string
 ): Promise<UploadPhotoResult> {
   if (!client) {
     return { photo: null, error: 'Supabase no está configurado' };
@@ -102,8 +110,10 @@ export async function uploadAlbumPhoto(
       autor: autor.trim(),
       url: publicUrl,
       caption: caption.trim() || null,
+      owner_token: ownerToken,
+      storage_path: uploadData.path,
     })
-    .select('id, autor, url, caption, created_at')
+    .select('id, autor, url, caption, owner_token, storage_path, created_at')
     .single();
 
   if (insertError || !rowData) {
@@ -113,4 +123,84 @@ export async function uploadAlbumPhoto(
   }
 
   return { photo: rowData, error: null };
+}
+
+export async function deleteOwnAlbumPhoto(
+  client: SupabaseClient | null,
+  photoId: string,
+  ownerToken: string
+): Promise<boolean> {
+  if (!client) return false;
+
+  const { data, error } = await client.rpc('delete_own_photo', {
+    p_photo_id: photoId,
+    p_owner_token: ownerToken,
+  });
+
+  if (error) {
+    console.warn('Error borrando Polaroid:', error.message);
+    return false;
+  }
+
+  return Boolean(data);
+}
+
+// --- Admin helpers (require Supabase Auth session) ---
+
+export async function getAdminSession(client: SupabaseClient | null): Promise<Session | null> {
+  if (!client) return null;
+  const { data } = await client.auth.getSession();
+  return data.session ?? null;
+}
+
+export async function signInAdmin(
+  client: SupabaseClient | null,
+  email: string,
+  password: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!client) return { ok: false, error: 'Supabase no está configurado' };
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+export async function signOutAdmin(client: SupabaseClient | null): Promise<void> {
+  if (!client) return;
+  await client.auth.signOut();
+}
+
+export async function fetchAllGuests(client: SupabaseClient | null): Promise<GuestRecord[]> {
+  if (!client) return [];
+  const { data, error } = await client
+    .from('invitados')
+    .select('id, nombre, asistencia, acompanantes, dispositivo, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error || !data) return [];
+  return data;
+}
+
+export async function deleteGuestById(
+  client: SupabaseClient | null,
+  guestId: string
+): Promise<boolean> {
+  if (!client) return false;
+  const { error } = await client.from('invitados').delete().eq('id', guestId);
+  return !error;
+}
+
+export async function adminDeletePhoto(
+  client: SupabaseClient | null,
+  photo: AlbumPhoto
+): Promise<boolean> {
+  if (!client) return false;
+
+  if (photo.storage_path) {
+    await client.storage.from('album-fiesta').remove([photo.storage_path]);
+  }
+
+  const { error } = await client.from('album_fotos').delete().eq('id', photo.id);
+  return !error;
 }

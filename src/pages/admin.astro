@@ -1,0 +1,358 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AnimatedBackground from '../components/AnimatedBackground.astro';
+import Toast from '../components/Toast.astro';
+import { EVENT_CONFIG } from '../config/event';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={`Panel Admin — ${EVENT_CONFIG.celebrantName}`}>
+  <AnimatedBackground />
+
+  <main
+    id="admin-root"
+    data-supabase-url={supabaseUrl}
+    data-supabase-key={supabaseAnonKey}
+    class="mx-auto max-w-5xl px-4 py-8 pb-20 sm:px-6"
+  >
+    <nav class="mb-8 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <a
+          href={baseUrl}
+          class="rounded-full border border-[#c89d54]/50 bg-[#faf5ec]/85 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#4a0a13] shadow-sm transition hover:bg-[#f3e8d2]"
+        >
+          ← Invitación
+        </a>
+        <a
+          href={`${baseUrl}album`}
+          class="rounded-full border border-[#c89d54]/50 bg-[#faf5ec]/85 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#4a0a13] shadow-sm transition hover:bg-[#f3e8d2]"
+        >
+          Álbum Polaroid
+        </a>
+      </div>
+
+      <button
+        id="admin-logout-btn"
+        type="button"
+        class="hidden cursor-pointer rounded-full bg-[#7a1320] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#faf5ec] transition hover:bg-[#9b1b30]"
+      >
+        Cerrar Sesión
+      </button>
+    </nav>
+
+    <section id="admin-login-section" class="royal-glass mx-auto max-w-md rounded-3xl p-7 sm:p-9">
+      <p class="text-center text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+        Administración
+      </p>
+      <h1 class="mt-2 text-center font-serif text-3xl font-semibold text-[#4a0a13]">
+        Panel de Control
+      </h1>
+      <p class="mt-2 text-center text-xs text-[#2b181b]/75">
+        Inicia sesión con tu cuenta Admin de Supabase para ver invitados y moderar el álbum.
+      </p>
+
+      <form id="admin-login-form" class="mt-6 space-y-4">
+        <div>
+          <label for="admin-email" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+            Correo Admin
+          </label>
+          <input
+            id="admin-email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="admin@correo.com"
+            class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-2.5 text-sm text-[#2b181b] outline-none focus:border-[#9b1b30]"
+          />
+        </div>
+
+        <div>
+          <label for="admin-password" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+            Contraseña
+          </label>
+          <input
+            id="admin-password"
+            type="password"
+            required
+            autocomplete="current-password"
+            placeholder="••••••••"
+            class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-2.5 text-sm text-[#2b181b] outline-none focus:border-[#9b1b30]"
+          />
+        </div>
+
+        <button
+          id="admin-login-btn"
+          type="submit"
+          class="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#6d1322] via-[#9b1b30] to-[#6d1322] px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[#faf5ec] shadow-lg transition hover:brightness-110"
+        >
+          Entrar al Panel
+        </button>
+      </form>
+    </section>
+
+    <section id="admin-dashboard" class="hidden space-y-10">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div class="royal-glass rounded-2xl p-4 text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#9b1b30]">Registros</p>
+          <p id="stat-total" class="mt-1 font-serif text-3xl font-bold text-[#4a0a13]">0</p>
+        </div>
+        <div class="royal-glass rounded-2xl p-4 text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#9b1b30]">Confirmados</p>
+          <p id="stat-yes" class="mt-1 font-serif text-3xl font-bold text-[#4a0a13]">0</p>
+        </div>
+        <div class="royal-glass rounded-2xl p-4 text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#9b1b30]">Acompañantes</p>
+          <p id="stat-companions" class="mt-1 font-serif text-3xl font-bold text-[#4a0a13]">0</p>
+        </div>
+        <div class="royal-glass rounded-2xl p-4 text-center">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#9b1b30]">Polaroids</p>
+          <p id="stat-photos" class="mt-1 font-serif text-3xl font-bold text-[#4a0a13]">0</p>
+        </div>
+      </div>
+
+      <div class="royal-glass rounded-3xl p-6 sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="font-serif text-2xl font-semibold text-[#4a0a13]">Registros e Invitados</h2>
+          <button
+            id="admin-refresh-btn"
+            type="button"
+            class="cursor-pointer rounded-full border border-[#c89d54]/60 bg-[#f3e8d2] px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#4a0a13] hover:bg-[#e5c98b]/45"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        <div id="admin-guests-list" class="mt-5 space-y-3"></div>
+      </div>
+
+      <div class="royal-glass rounded-3xl p-6 sm:p-8">
+        <h2 class="font-serif text-2xl font-semibold text-[#4a0a13]">Moderar Polaroids</h2>
+        <div id="admin-photos-grid" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4"></div>
+      </div>
+    </section>
+  </main>
+
+  <Toast />
+</Layout>
+
+<script>
+  import {
+    adminDeletePhoto,
+    deleteGuestById,
+    fetchAlbumPhotos,
+    fetchAllGuests,
+    getAdminSession,
+    getSupabaseClient,
+    signInAdmin,
+    signOutAdmin,
+  } from '../services/supabase';
+
+  function initAdminPage() {
+    const root = document.getElementById('admin-root');
+    if (!root) return;
+
+    const loginSection = document.getElementById('admin-login-section');
+    const dashboard = document.getElementById('admin-dashboard');
+    const logoutBtn = document.getElementById('admin-logout-btn');
+    const refreshBtn = document.getElementById('admin-refresh-btn');
+    const loginForm = document.getElementById('admin-login-form') as HTMLFormElement | null;
+    const emailInput = document.getElementById('admin-email') as HTMLInputElement | null;
+    const passwordInput = document.getElementById('admin-password') as HTMLInputElement | null;
+    const loginBtn = document.getElementById('admin-login-btn') as HTMLButtonElement | null;
+
+    const guestsList = document.getElementById('admin-guests-list');
+    const photosGrid = document.getElementById('admin-photos-grid');
+    const statTotal = document.getElementById('stat-total');
+    const statYes = document.getElementById('stat-yes');
+    const statCompanions = document.getElementById('stat-companions');
+    const statPhotos = document.getElementById('stat-photos');
+
+    const client = getSupabaseClient(
+      root.dataset.supabaseUrl ?? '',
+      root.dataset.supabaseKey ?? ''
+    );
+
+    function showToast(msg: string) {
+      const fn = (window as unknown as { showToast?: (m: string) => void }).showToast;
+      fn?.(msg);
+    }
+
+    async function loadDashboardData() {
+      if (!client) return;
+      const [guests, photos] = await Promise.all([
+        fetchAllGuests(client),
+        fetchAlbumPhotos(client),
+      ]);
+
+      const confirmed = guests.filter((g) => g.asistencia === 'Sí asistiré');
+      const totalCompanions = confirmed.reduce((acc, g) => acc + (g.acompanantes || 0), 0);
+
+      if (statTotal) statTotal.textContent = String(guests.length);
+      if (statYes) statYes.textContent = String(confirmed.length);
+      if (statCompanions) statCompanions.textContent = String(totalCompanions);
+      if (statPhotos) statPhotos.textContent = String(photos.length);
+
+      if (guestsList) {
+        guestsList.innerHTML = '';
+        if (guests.length === 0) {
+          guestsList.innerHTML = '<p class="text-sm text-[#4a0a13]/70">No hay registros todavía.</p>';
+        } else {
+          for (const g of guests) {
+            const row = document.createElement('div');
+            row.className =
+              'flex flex-col justify-between gap-3 rounded-2xl border border-[#c89d54]/35 bg-[#faf5ec]/85 p-4 sm:flex-row sm:items-center';
+
+            const info = document.createElement('div');
+            const nameEl = document.createElement('p');
+            nameEl.className = 'font-semibold text-[#4a0a13]';
+            nameEl.textContent = g.nombre;
+
+            const metaEl = document.createElement('p');
+            metaEl.className = 'text-xs text-[#2b181b]/75';
+            const dateStr = new Date(g.created_at).toLocaleString('es-VE');
+            metaEl.textContent = `${g.asistencia} · Acompañantes: ${g.acompanantes ?? 0} · ${dateStr}`;
+
+            info.appendChild(nameEl);
+            info.appendChild(metaEl);
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className =
+              'cursor-pointer self-start rounded-lg border border-[#9b1b30]/40 bg-[#9b1b30]/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#9b1b30] transition hover:bg-[#9b1b30] hover:text-white sm:self-center';
+            delBtn.textContent = 'Eliminar';
+            delBtn.addEventListener('click', async () => {
+              delBtn.disabled = true;
+              const ok = await deleteGuestById(client, g.id);
+              if (ok) {
+                showToast('Registro eliminado');
+                await loadDashboardData();
+              } else {
+                delBtn.disabled = false;
+                showToast('No se pudo eliminar (revisa permisos)');
+              }
+            });
+
+            row.appendChild(info);
+            row.appendChild(delBtn);
+            guestsList.appendChild(row);
+          }
+        }
+      }
+
+      if (photosGrid) {
+        photosGrid.innerHTML = '';
+        if (photos.length === 0) {
+          photosGrid.innerHTML = '<p class="col-span-full text-sm text-[#4a0a13]/70">No hay Polaroids aún.</p>';
+        } else {
+          for (const photo of photos) {
+            const card = document.createElement('div');
+            card.className = 'flex flex-col rounded-sm border border-[#e5c98b]/50 bg-[#fffdf8] p-2.5 shadow-sm';
+
+            const img = document.createElement('img');
+            img.src = photo.url;
+            img.alt = photo.caption || photo.autor;
+            img.className = 'aspect-square w-full object-cover';
+
+            const authorEl = document.createElement('p');
+            authorEl.className = 'mt-2 truncate text-xs font-semibold text-[#4a0a13]';
+            authorEl.textContent = photo.autor;
+
+            const capEl = document.createElement('p');
+            capEl.className = 'truncate text-[11px] text-[#2b181b]/70';
+            capEl.textContent = photo.caption || 'Sin mensaje';
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className =
+              'mt-2 cursor-pointer rounded-lg bg-[#9b1b30] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white transition hover:bg-[#7a1320]';
+            delBtn.textContent = 'Borrar Foto';
+            delBtn.addEventListener('click', async () => {
+              delBtn.disabled = true;
+              const ok = await adminDeletePhoto(client, photo);
+              if (ok) {
+                showToast('Polaroid eliminada');
+                await loadDashboardData();
+              } else {
+                delBtn.disabled = false;
+                showToast('Error al borrar foto');
+              }
+            });
+
+            card.appendChild(img);
+            card.appendChild(authorEl);
+            card.appendChild(capEl);
+            card.appendChild(delBtn);
+            photosGrid.appendChild(card);
+          }
+        }
+      }
+    }
+
+    async function syncAuthState() {
+      const session = await getAdminSession(client);
+      if (session) {
+        loginSection?.classList.add('hidden');
+        dashboard?.classList.remove('hidden');
+        logoutBtn?.classList.remove('hidden');
+        await loadDashboardData();
+      } else {
+        loginSection?.classList.remove('hidden');
+        dashboard?.classList.add('hidden');
+        logoutBtn?.classList.add('hidden');
+      }
+    }
+
+    if (loginForm && !loginForm.dataset.bound) {
+      loginForm.dataset.bound = 'true';
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = emailInput?.value.trim() ?? '';
+        const password = passwordInput?.value ?? '';
+        if (!email || !password) return;
+
+        if (loginBtn) {
+          loginBtn.disabled = true;
+          loginBtn.textContent = 'Verificando...';
+        }
+
+        const res = await signInAdmin(client, email, password);
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Entrar al Panel';
+        }
+
+        if (res.ok) {
+          showToast('Bienvenido al Panel Admin');
+          await syncAuthState();
+        } else {
+          showToast(`Error: ${res.error ?? 'Credenciales inválidas'}`);
+        }
+      });
+    }
+
+    if (logoutBtn && !logoutBtn.dataset.bound) {
+      logoutBtn.dataset.bound = 'true';
+      logoutBtn.addEventListener('click', async () => {
+        await signOutAdmin(client);
+        showToast('Sesión cerrada');
+        await syncAuthState();
+      });
+    }
+
+    if (refreshBtn && !refreshBtn.dataset.bound) {
+      refreshBtn.dataset.bound = 'true';
+      refreshBtn.addEventListener('click', () => {
+        void loadDashboardData();
+      });
+    }
+
+    void syncAuthState();
+  }
+
+  document.addEventListener('astro:page-load', initAdminPage);
+</script>

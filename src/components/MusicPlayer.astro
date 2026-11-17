@@ -6,7 +6,7 @@ const audioSrc = `${baseUrl}audio/cancion.mp3`;
 ---
 
 <div transition:persist="royal-music" class="fixed right-4 bottom-5 z-30">
-  <audio id="bg-music-audio" src={audioSrc} loop preload="none"></audio>
+  <audio id="bg-music-audio" src={audioSrc} loop preload="auto"></audio>
 
   <button
     id="bg-music-toggle"
@@ -20,41 +20,94 @@ const audioSrc = `${baseUrl}audio/cancion.mp3`;
 </div>
 
 <script>
+  const MUSIC_PREF_KEY = 'xv_arianna_music_enabled';
   const audio = document.getElementById('bg-music-audio') as HTMLAudioElement | null;
   const toggleBtn = document.getElementById('bg-music-toggle') as HTMLButtonElement | null;
   const label = document.getElementById('bg-music-label');
   const icon = document.getElementById('bg-music-icon');
 
-  let isPlaying = false;
+  let unlockPending = false;
 
   function syncUi(playing: boolean) {
-    isPlaying = playing;
     if (label) label.textContent = playing ? 'Pausar' : 'Música';
     if (icon) icon.textContent = playing ? '❚❚' : '♪';
   }
 
-  async function playMusic() {
-    if (!audio) return;
+  function isMusicWanted(): boolean {
+    const saved = localStorage.getItem(MUSIC_PREF_KEY);
+    return saved !== 'false';
+  }
+
+  async function tryPlayMusic(): Promise<boolean> {
+    if (!audio) return false;
+    if (!audio.paused) {
+      syncUi(true);
+      return true;
+    }
+
     try {
       audio.volume = 0.55;
       await audio.play();
       syncUi(true);
+      return true;
     } catch {
       syncUi(false);
+      return false;
     }
   }
 
-  toggleBtn?.addEventListener('click', () => {
-    if (!audio) return;
-    if (isPlaying) {
-      audio.pause();
-      syncUi(false);
-    } else {
-      void playMusic();
-    }
-  });
+  function scheduleResumeOnFirstGesture() {
+    if (unlockPending || !isMusicWanted()) return;
+    unlockPending = true;
+
+    const resumeHandler = async () => {
+      unlockPending = false;
+      window.removeEventListener('pointerdown', resumeHandler);
+      window.removeEventListener('keydown', resumeHandler);
+      if (isMusicWanted()) {
+        await tryPlayMusic();
+      }
+    };
+
+    window.addEventListener('pointerdown', resumeHandler, { passive: true, once: true });
+    window.addEventListener('keydown', resumeHandler, { passive: true, once: true });
+  }
+
+  if (toggleBtn && !toggleBtn.dataset.bound) {
+    toggleBtn.dataset.bound = 'true';
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!audio) return;
+
+      if (!audio.paused) {
+        audio.pause();
+        localStorage.setItem(MUSIC_PREF_KEY, 'false');
+        syncUi(false);
+      } else {
+        localStorage.setItem(MUSIC_PREF_KEY, 'true');
+        void tryPlayMusic();
+      }
+    });
+  }
 
   window.addEventListener('xv:open-invitation', () => {
-    void playMusic();
+    localStorage.setItem(MUSIC_PREF_KEY, 'true');
+    void tryPlayMusic();
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    if (!audio) return;
+    if (!audio.paused) {
+      syncUi(true);
+      return;
+    }
+
+    if (isMusicWanted() && localStorage.getItem('xv_arianna_guest_name')) {
+      void tryPlayMusic().then((started) => {
+        if (!started) {
+          scheduleResumeOnFirstGesture();
+        }
+      });
+    }
   });
 </script>

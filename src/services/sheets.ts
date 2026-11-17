@@ -9,7 +9,20 @@ const STORAGE_KEYS = {
   guestName: 'xv_arianna_guest_name',
   registered: 'registrado',
   rsvpSubmitted: 'xv_arianna_rsvp_status',
+  deviceToken: 'xv_arianna_device_token',
 } as const;
+
+export function getOrCreateDeviceToken(): string {
+  let token = localStorage.getItem(STORAGE_KEYS.deviceToken);
+  if (!token) {
+    token =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    localStorage.setItem(STORAGE_KEYS.deviceToken, token);
+  }
+  return token;
+}
 
 export function getSavedGuestName(): string {
   return localStorage.getItem(STORAGE_KEYS.guestName) ?? '';
