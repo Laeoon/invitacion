@@ -62,13 +62,20 @@ export async function fetchAlbumPhotos(client: SupabaseClient | null): Promise<A
   return data;
 }
 
+export interface UploadPhotoResult {
+  photo: AlbumPhoto | null;
+  error: string | null;
+}
+
 export async function uploadAlbumPhoto(
   client: SupabaseClient | null,
   blob: Blob,
   autor: string,
   caption: string
-): Promise<AlbumPhoto | null> {
-  if (!client) return null;
+): Promise<UploadPhotoResult> {
+  if (!client) {
+    return { photo: null, error: 'Supabase no está configurado' };
+  }
 
   const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
   const filePath = `fiesta/${Date.now()}_${Math.random().toString(36).slice(2, 9)}.${ext}`;
@@ -81,8 +88,9 @@ export async function uploadAlbumPhoto(
     });
 
   if (uploadError || !uploadData) {
-    console.warn('Error subiendo foto a Storage:', uploadError?.message);
-    return null;
+    const msg = uploadError?.message || 'Error desconocido en Storage';
+    console.warn('Error subiendo foto a Storage:', msg);
+    return { photo: null, error: `Storage: ${msg}` };
   }
 
   const { data: publicData } = client.storage.from('album-fiesta').getPublicUrl(uploadData.path);
@@ -99,9 +107,10 @@ export async function uploadAlbumPhoto(
     .single();
 
   if (insertError || !rowData) {
-    console.warn('Error guardando registro de foto:', insertError?.message);
-    return null;
+    const msg = insertError?.message || 'Error guardando en tabla album_fotos';
+    console.warn('Error guardando registro de foto:', msg);
+    return { photo: null, error: `Base de datos: ${msg}` };
   }
 
-  return rowData;
+  return { photo: rowData, error: null };
 }

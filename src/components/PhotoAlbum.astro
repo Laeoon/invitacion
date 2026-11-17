@@ -432,9 +432,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
         try {
           const compressed = await compressImageFile(file);
-          const uploaded = await uploadAlbumPhoto(client, compressed, autor, caption);
+          const result = await uploadAlbumPhoto(client, compressed, autor, caption);
 
-          if (uploaded) {
+          if (result.photo) {
             showToast('¡Polaroid publicada en el muro!');
             if (fileInput) fileInput.value = '';
             if (captionInput) captionInput.value = '';
@@ -443,7 +443,7 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
             const photos = await fetchAlbumPhotos(client);
             renderPhotos(photos);
           } else {
-            showToast('No se pudo subir la foto. Revisa el bucket en Supabase.');
+            showToast(`Error al subir: ${result.error ?? 'Revisa el bucket en Supabase'}`);
           }
         } finally {
           if (submitBtn) {
