@@ -1,0 +1,295 @@
+---
+import RoseOrnament from './RoseOrnament.astro';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<section id="album" class="px-5 py-12 sm:py-16">
+  <div
+    id="album-container"
+    data-supabase-url={supabaseUrl}
+    data-supabase-key={supabaseAnonKey}
+    class="mx-auto max-w-5xl"
+  >
+    <div class="text-center" data-aos="fade-up">
+      <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+        Recuerdos de la Fiesta
+      </p>
+      <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-5xl">
+        Álbum de Fotos
+      </h2>
+      <RoseOrnament compact />
+      <p class="mx-auto max-w-lg text-sm text-[#2b181b]/75 sm:text-base">
+        Sube tus mejores momentos de la noche y descarga los recuerdos compartidos por todos los invitados.
+      </p>
+    </div>
+
+    <div class="royal-glass mx-auto mt-8 max-w-xl rounded-3xl p-6 sm:p-8" data-aos="fade-up">
+      <form id="album-upload-form" class="space-y-4">
+        <div>
+          <label for="album-author" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+            Tu Nombre
+          </label>
+          <input
+            id="album-author"
+            type="text"
+            required
+            minlength="2"
+            placeholder="Tu nombre y apellido"
+            class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-2.5 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
+          />
+        </div>
+
+        <div>
+          <label for="album-caption" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+            Mensaje corto (opcional)
+          </label>
+          <input
+            id="album-caption"
+            type="text"
+            maxlength="120"
+            placeholder="Ej. En la pista con Arianna"
+            class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-2.5 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
+          />
+        </div>
+
+        <div>
+          <label for="album-file" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+            Elige tu foto
+          </label>
+          <input
+            id="album-file"
+            type="file"
+            accept="image/*"
+            required
+            class="mt-1.5 block w-full cursor-pointer rounded-xl border border-dashed border-[#c89d54]/70 bg-[#faf5ec]/70 px-3 py-3 text-xs text-[#4a0a13] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#7a1320] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#faf5ec]"
+          />
+        </div>
+
+        <button
+          id="album-submit-btn"
+          type="submit"
+          class="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#b8893a] via-[#d4af37] to-[#b8893a] px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[#3a070f] shadow-md transition hover:brightness-105"
+        >
+          Subir Foto al Álbum
+        </button>
+      </form>
+    </div>
+
+    <div id="album-empty" class="mt-8 text-center text-sm text-[#4a0a13]/70">
+      Aún no hay fotos en el álbum. ¡Sé el primero en compartir un recuerdo!
+    </div>
+
+    <div
+      id="album-grid"
+      class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+    >
+    </div>
+  </div>
+</section>
+
+<div
+  id="album-lightbox"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+>
+  <div class="relative max-h-[90vh] max-w-3xl text-center">
+    <button
+      id="lightbox-close"
+      type="button"
+      class="absolute -top-10 right-0 cursor-pointer rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:bg-white/25"
+    >
+      Cerrar
+    </button>
+    <img id="lightbox-img" src="" alt="Foto del evento" class="max-h-[75vh] rounded-2xl object-contain shadow-2xl" />
+    <p id="lightbox-meta" class="mt-3 text-sm text-[#f3e8d2]"></p>
+  </div>
+</div>
+
+<script>
+  import { compressImageFile } from '../services/imageCompressor';
+  import { getSavedGuestName } from '../services/sheets';
+  import {
+    fetchAlbumPhotos,
+    getSupabaseClient,
+    uploadAlbumPhoto,
+    type AlbumPhoto,
+  } from '../services/supabase';
+
+  const container = document.getElementById('album-container');
+  const form = document.getElementById('album-upload-form') as HTMLFormElement | null;
+  const authorInput = document.getElementById('album-author') as HTMLInputElement | null;
+  const captionInput = document.getElementById('album-caption') as HTMLInputElement | null;
+  const fileInput = document.getElementById('album-file') as HTMLInputElement | null;
+  const submitBtn = document.getElementById('album-submit-btn') as HTMLButtonElement | null;
+  const grid = document.getElementById('album-grid');
+  const emptyState = document.getElementById('album-empty');
+
+  const lightbox = document.getElementById('album-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+  const lightboxMeta = document.getElementById('lightbox-meta');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  const supabaseUrl = container?.dataset.supabaseUrl ?? '';
+  const supabaseKey = container?.dataset.supabaseKey ?? '';
+  const client = getSupabaseClient(supabaseUrl, supabaseKey);
+
+  const savedName = getSavedGuestName();
+  if (savedName && authorInput) {
+    authorInput.value = savedName;
+  }
+
+  function showToast(msg: string) {
+    const fn = (window as unknown as { showToast?: (m: string) => void }).showToast;
+    fn?.(msg);
+  }
+
+  async function downloadPhoto(url: string, filename: string) {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function renderPhotos(photos: AlbumPhoto[]) {
+    if (!grid || !emptyState) return;
+    grid.innerHTML = '';
+
+    if (photos.length === 0) {
+      emptyState.classList.remove('hidden');
+      return;
+    }
+
+    emptyState.classList.add('hidden');
+
+    for (const photo of photos) {
+      const card = document.createElement('article');
+      card.className =
+        'royal-glass group flex flex-col overflow-hidden rounded-2xl transition hover:-translate-y-0.5';
+
+      const imgBtn = document.createElement('button');
+      imgBtn.type = 'button';
+      imgBtn.className = 'aspect-square w-full cursor-pointer overflow-hidden bg-[#f3e8d2]';
+
+      const img = document.createElement('img');
+      img.src = photo.url;
+      img.alt = photo.caption || `Foto compartida por ${photo.autor}`;
+      img.loading = 'lazy';
+      img.className = 'h-full w-full object-cover transition duration-500 group-hover:scale-105';
+      imgBtn.appendChild(img);
+
+      imgBtn.addEventListener('click', () => {
+        if (!lightbox || !lightboxImg || !lightboxMeta) return;
+        lightboxImg.src = photo.url;
+        lightboxMeta.textContent = photo.caption ? `${photo.autor} — ${photo.caption}` : photo.autor;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+      });
+
+      const body = document.createElement('div');
+      body.className = 'flex flex-1 flex-col justify-between p-3 text-left';
+
+      const info = document.createElement('div');
+      const authorEl = document.createElement('p');
+      authorEl.className = 'truncate text-xs font-semibold text-[#4a0a13]';
+      authorEl.textContent = photo.autor;
+      info.appendChild(authorEl);
+
+      if (photo.caption) {
+        const capEl = document.createElement('p');
+        capEl.className = 'mt-0.5 line-clamp-2 text-[11px] text-[#2b181b]/75';
+        capEl.textContent = photo.caption;
+        info.appendChild(capEl);
+      }
+
+      const dlBtn = document.createElement('button');
+      dlBtn.type = 'button';
+      dlBtn.className =
+        'mt-2.5 w-full cursor-pointer rounded-lg border border-[#c89d54]/50 bg-[#faf5ec] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#7a1320] transition hover:bg-[#f3e8d2]';
+      dlBtn.textContent = 'Descargar';
+      dlBtn.addEventListener('click', () => {
+        void downloadPhoto(photo.url, `xv-arianna-${photo.id.slice(0, 6)}.webp`);
+      });
+
+      body.appendChild(info);
+      body.appendChild(dlBtn);
+      card.appendChild(imgBtn);
+      card.appendChild(body);
+      grid.appendChild(card);
+    }
+  }
+
+  lightboxClose?.addEventListener('click', () => {
+    lightbox?.classList.add('hidden');
+    lightbox?.classList.remove('flex');
+  });
+
+  lightbox?.addEventListener('click', (e) => {
+    if (e.target === lightbox) {
+      lightbox.classList.add('hidden');
+      lightbox.classList.remove('flex');
+    }
+  });
+
+  async function loadInitialPhotos() {
+    if (!client) {
+      if (emptyState) {
+        emptyState.textContent = 'Conecta Supabase (.env) para habilitar el álbum de fotos compartido.';
+      }
+      return;
+    }
+    const photos = await fetchAlbumPhotos(client);
+    renderPhotos(photos);
+  }
+
+  void loadInitialPhotos();
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!client) {
+      showToast('Falta configurar Supabase en las variables de entorno');
+      return;
+    }
+
+    const file = fileInput?.files?.[0];
+    const autor = authorInput?.value.trim() ?? '';
+    const caption = captionInput?.value.trim() ?? '';
+
+    if (!file || autor.length < 2) return;
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subiendo foto...';
+    }
+
+    try {
+      const compressed = await compressImageFile(file);
+      const uploaded = await uploadAlbumPhoto(client, compressed, autor, caption);
+
+      if (uploaded) {
+        showToast('¡Foto subida al álbum!');
+        if (fileInput) fileInput.value = '';
+        if (captionInput) captionInput.value = '';
+        const photos = await fetchAlbumPhotos(client);
+        renderPhotos(photos);
+      } else {
+        showToast('No se pudo subir la foto. Revisa el bucket en Supabase.');
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subir Foto al Álbum';
+      }
+    }
+  });
+</script>

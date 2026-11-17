@@ -1,0 +1,187 @@
+---
+import RoseOrnament from './RoseOrnament.astro';
+
+const webhookUrl = import.meta.env.PUBLIC_SHEETS_WEBHOOK_URL ?? '';
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<section id="rsvp" class="px-5 py-12 pb-20 sm:py-16 sm:pb-24">
+  <div
+    id="rsvp-container"
+    data-webhook-url={webhookUrl}
+    data-supabase-url={supabaseUrl}
+    data-supabase-key={supabaseAnonKey}
+    class="royal-glass mx-auto max-w-xl rounded-3xl p-7 sm:p-10"
+    data-aos="fade-up"
+  >
+    <div class="text-center">
+      <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+        Confirma tu Lugar
+      </p>
+      <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-4xl">
+        Confirmación de Asistencia
+      </h2>
+      <RoseOrnament compact />
+    </div>
+
+    <form id="rsvp-form" class="mt-4 space-y-5">
+      <div>
+        <label for="rsvp-name" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+          Nombre y Apellido
+        </label>
+        <input
+          id="rsvp-name"
+          name="nombre"
+          type="text"
+          required
+          minlength="2"
+          placeholder="Tu nombre y apellido"
+          class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-3 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
+        />
+      </div>
+
+      <div>
+        <label for="rsvp-status" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+          ¿Confirmas tu asistencia?
+        </label>
+        <select
+          id="rsvp-status"
+          name="asistencia"
+          required
+          class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-3 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
+        >
+          <option value="Sí asistiré">Sí asistiré</option>
+          <option value="No podré asistir">No podré asistir</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="rsvp-guests" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
+          Número de acompañantes
+        </label>
+        <input
+          id="rsvp-guests"
+          name="acompanantes"
+          type="number"
+          min="0"
+          max="10"
+          value="0"
+          class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-3 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
+        />
+      </div>
+
+      <button
+        id="rsvp-submit-btn"
+        type="submit"
+        class="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#6d1322] via-[#9b1b30] to-[#6d1322] px-6 py-3.5 text-sm font-bold uppercase tracking-[0.2em] text-[#faf5ec] shadow-lg transition hover:brightness-110 active:scale-[0.99]"
+      >
+        Enviar Confirmación
+      </button>
+    </form>
+
+    <div
+      id="rsvp-confirmation"
+      class="mt-6 hidden rounded-2xl border border-[#c89d54]/50 bg-[#f3e8d2]/80 p-5 text-center"
+    >
+      <p class="font-serif text-2xl font-semibold text-[#7a1320]">
+        ¡Gracias por confirmar!
+      </p>
+      <p id="rsvp-confirmation-detail" class="mt-1 text-sm text-[#2b181b]/80"></p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import confetti from 'canvas-confetti';
+  import {
+    getSavedGuestName,
+    getSavedRsvpStatus,
+    postToSheetsWebhook,
+    saveGuestName,
+    saveRsvpStatus,
+  } from '../services/sheets';
+  import { getSupabaseClient, registerGuestInSupabase } from '../services/supabase';
+
+  const container = document.getElementById('rsvp-container');
+  const form = document.getElementById('rsvp-form') as HTMLFormElement | null;
+  const nameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
+  const statusSelect = document.getElementById('rsvp-status') as HTMLSelectElement | null;
+  const guestsInput = document.getElementById('rsvp-guests') as HTMLInputElement | null;
+  const submitBtn = document.getElementById('rsvp-submit-btn') as HTMLButtonElement | null;
+  const confirmationBox = document.getElementById('rsvp-confirmation');
+  const confirmationDetail = document.getElementById('rsvp-confirmation-detail');
+
+  const savedName = getSavedGuestName();
+  if (savedName && nameInput) {
+    nameInput.value = savedName;
+  }
+
+  const savedRsvp = getSavedRsvpStatus();
+  if (savedRsvp && confirmationBox && confirmationDetail) {
+    confirmationBox.classList.remove('hidden');
+    confirmationDetail.textContent = `Estado guardado: ${savedRsvp}. Si necesitas actualizarlo, envía el formulario nuevamente.`;
+  }
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const nombre = nameInput?.value.trim() ?? '';
+    const asistencia = statusSelect?.value ?? 'Sí asistiré';
+    const acompanantes = guestsInput?.value ?? '0';
+
+    if (nombre.length < 2) {
+      nameInput?.focus();
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enviando...';
+    }
+
+    saveGuestName(nombre);
+    saveRsvpStatus(`${asistencia} (${acompanantes} acompañantes)`);
+
+    const webhookUrl = container?.dataset.webhookUrl ?? '';
+    const supabaseUrl = container?.dataset.supabaseUrl ?? '';
+    const supabaseKey = container?.dataset.supabaseKey ?? '';
+    const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+
+    await Promise.all([
+      registerGuestInSupabase(sbClient, {
+        nombre,
+        asistencia,
+        acompanantes: Number(acompanantes) || 0,
+        dispositivo: navigator.userAgent,
+      }),
+      postToSheetsWebhook(webhookUrl, {
+        nombre,
+        asistencia,
+        acompanantes,
+        dispositivo: navigator.userAgent,
+      }),
+    ]);
+
+    if (asistencia === 'Sí asistiré') {
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.7 },
+        colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
+      });
+    }
+
+    if (confirmationBox && confirmationDetail) {
+      confirmationBox.classList.remove('hidden');
+      confirmationDetail.textContent = `${nombre} — ${asistencia} (Acompañantes: ${acompanantes}).`;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Actualizar Confirmación';
+    }
+
+    const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+    showToast?.('Confirmación registrada');
+  });
+</script>

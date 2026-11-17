@@ -1,0 +1,60 @@
+---
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const audioSrc = `${baseUrl}audio/cancion.mp3`;
+---
+
+<div class="fixed right-4 bottom-5 z-30">
+  <audio id="bg-music-audio" src={audioSrc} loop preload="none"></audio>
+
+  <button
+    id="bg-music-toggle"
+    type="button"
+    aria-label="Reproducir o pausar música de fondo"
+    class="flex cursor-pointer items-center gap-2 rounded-full border border-[#e5c98b]/60 bg-[#4a0a13]/90 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#e5c98b] shadow-xl backdrop-blur-md transition hover:bg-[#7a1320]"
+  >
+    <span id="bg-music-icon" aria-hidden="true">♪</span>
+    <span id="bg-music-label">Música</span>
+  </button>
+</div>
+
+<script>
+  const audio = document.getElementById('bg-music-audio') as HTMLAudioElement | null;
+  const toggleBtn = document.getElementById('bg-music-toggle') as HTMLButtonElement | null;
+  const label = document.getElementById('bg-music-label');
+  const icon = document.getElementById('bg-music-icon');
+
+  let isPlaying = false;
+
+  function syncUi(playing: boolean) {
+    isPlaying = playing;
+    if (label) label.textContent = playing ? 'Pausar' : 'Música';
+    if (icon) icon.textContent = playing ? '❚❚' : '♪';
+  }
+
+  async function playMusic() {
+    if (!audio) return;
+    try {
+      audio.volume = 0.55;
+      await audio.play();
+      syncUi(true);
+    } catch {
+      syncUi(false);
+    }
+  }
+
+  toggleBtn?.addEventListener('click', () => {
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+      syncUi(false);
+    } else {
+      void playMusic();
+    }
+  });
+
+  window.addEventListener('xv:open-invitation', () => {
+    void playMusic();
+  });
+</script>

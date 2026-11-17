@@ -1,0 +1,62 @@
+---
+import { EVENT_CONFIG } from '../config/event';
+import RoseOrnament from './RoseOrnament.astro';
+---
+
+<section id="regalos" class="px-5 py-12 sm:py-16">
+  <div class="royal-glass mx-auto max-w-2xl rounded-3xl p-7 text-center sm:p-10" data-aos="fade-up">
+    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+      Obsequios
+    </p>
+    <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-4xl">
+      {EVENT_CONFIG.gifts.headline}
+    </h2>
+    <RoseOrnament compact />
+
+    <p class="mx-auto max-w-lg text-sm leading-relaxed text-[#2b181b]/80 sm:text-base">
+      {EVENT_CONFIG.gifts.description}
+    </p>
+
+    <div class="mt-6 space-y-3 text-left">
+      {
+        EVENT_CONFIG.gifts.bankDetails.map((detail) => (
+          <div class="flex flex-col items-start justify-between gap-3 rounded-2xl border border-[#c89d54]/35 bg-[#faf5ec]/80 px-4 py-3.5 sm:flex-row sm:items-center">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-[#9b1b30]">
+                {detail.label}
+              </p>
+              <p class="mt-0.5 font-mono text-sm text-[#4a0a13]">{detail.value}</p>
+            </div>
+            <button
+              type="button"
+              data-copy-value={detail.value}
+              class="copy-bank-btn inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#c89d54]/60 bg-[#f3e8d2] px-3.5 py-2 text-xs font-semibold uppercase tracking-wider text-[#4a0a13] transition hover:bg-[#e5c98b]/45"
+            >
+              Copiar
+            </button>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.copy-bank-btn');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const value = btn.dataset.copyValue ?? '';
+      if (!value) return;
+
+      try {
+        await navigator.clipboard.writeText(value);
+        const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+        showToast?.('Datos copiados al portapapeles');
+      } catch {
+        const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+        showToast?.('No se pudo copiar automáticamente');
+      }
+    });
+  });
+</script>

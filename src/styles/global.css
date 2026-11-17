@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+
+  --color-royal-crimson: #7a1320;
+  --color-royal-rose: #9b1b30;
+  --color-royal-burgundy: #4a0a13;
+  --color-champagne: #c89d54;
+  --color-champagne-light: #e5c98b;
+  --color-ivory: #faf5ec;
+  --color-parchment: #f3e8d2;
+  --color-ink: #2b181b;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--color-ivory);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  body.gate-locked {
+    overflow: hidden;
+    height: 100dvh;
+  }
+}
+
+.royal-glass {
+  background: rgba(250, 245, 236, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(200, 157, 84, 0.38);
+  box-shadow: 0 20px 45px -20px rgba(74, 10, 19, 0.22);
+}
+
+.royal-glass-dark {
+  background: rgba(74, 10, 19, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(229, 201, 139, 0.35);
+  box-shadow: 0 24px 60px -15px rgba(24, 3, 6, 0.55);
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(200, 157, 84, 0.25) 20%,
+    rgba(200, 157, 84, 0.85) 50%,
+    rgba(200, 157, 84, 0.25) 80%,
+    transparent 100%
+  );
+}
+
+.gold-shimmer-text {
+  background: linear-gradient(135deg, #9c722f 0%, #d4af37 45%, #f0d78c 65%, #9c722f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

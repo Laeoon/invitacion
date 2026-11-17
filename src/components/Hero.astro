@@ -1,0 +1,99 @@
+---
+import { EVENT_CONFIG } from '../config/event';
+import RoseOrnament from './RoseOrnament.astro';
+---
+
+<header class="relative overflow-hidden px-5 pt-14 pb-16 text-center sm:pt-20 sm:pb-24">
+  <div class="mx-auto max-w-2xl" data-aos="fade-up">
+    <span
+      class="inline-flex items-center gap-2 rounded-full border border-[#c89d54]/45 bg-[#f3e8d2]/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.26em] text-[#7a1320]"
+    >
+      {EVENT_CONFIG.editionLabel}
+    </span>
+
+    <p
+      id="hero-guest-greeting"
+      class="mt-6 text-base font-medium text-[#7a1320] sm:text-lg"
+    >
+      ¡Hola! Nos encantaría celebrar contigo
+    </p>
+
+    <h1 class="mt-3 font-serif text-5xl font-semibold tracking-wide text-[#4a0a13] sm:text-7xl">
+      <span class="gold-shimmer-text">{EVENT_CONFIG.celebrantName}</span>
+    </h1>
+
+    <p class="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[#2b181b]/80 sm:text-base">
+      {EVENT_CONFIG.heroSubtitle}
+    </p>
+
+    <RoseOrnament />
+
+    <p class="font-serif text-2xl font-semibold tracking-wider text-[#7a1320] sm:text-3xl">
+      {EVENT_CONFIG.dateLabel}
+    </p>
+
+    <div
+      id="countdown-box"
+      data-target-date={EVENT_CONFIG.eventIsoDate}
+      class="royal-glass mx-auto mt-8 grid max-w-lg grid-cols-4 gap-2 rounded-2xl p-4 sm:gap-4 sm:p-6"
+    >
+      <div class="rounded-xl bg-[#faf5ec]/70 py-3">
+        <span id="cd-days" class="block font-serif text-3xl font-bold text-[#7a1320] sm:text-4xl">00</span>
+        <span class="mt-1 block text-[11px] font-semibold uppercase tracking-widest text-[#2b181b]/70">Días</span>
+      </div>
+      <div class="rounded-xl bg-[#faf5ec]/70 py-3">
+        <span id="cd-hours" class="block font-serif text-3xl font-bold text-[#7a1320] sm:text-4xl">00</span>
+        <span class="mt-1 block text-[11px] font-semibold uppercase tracking-widest text-[#2b181b]/70">Horas</span>
+      </div>
+      <div class="rounded-xl bg-[#faf5ec]/70 py-3">
+        <span id="cd-minutes" class="block font-serif text-3xl font-bold text-[#7a1320] sm:text-4xl">00</span>
+        <span class="mt-1 block text-[11px] font-semibold uppercase tracking-widest text-[#2b181b]/70">Min</span>
+      </div>
+      <div class="rounded-xl bg-[#faf5ec]/70 py-3">
+        <span id="cd-seconds" class="block font-serif text-3xl font-bold text-[#7a1320] sm:text-4xl">00</span>
+        <span class="mt-1 block text-[11px] font-semibold uppercase tracking-widest text-[#2b181b]/70">Seg</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const box = document.getElementById('countdown-box');
+  const daysEl = document.getElementById('cd-days');
+  const hoursEl = document.getElementById('cd-hours');
+  const minutesEl = document.getElementById('cd-minutes');
+  const secondsEl = document.getElementById('cd-seconds');
+
+  const targetIso = box?.dataset.targetDate ?? '';
+  const targetTime = new Date(targetIso).getTime();
+
+  function pad(value: number): string {
+    return String(Math.max(0, value)).padStart(2, '0');
+  }
+
+  function updateCountdown() {
+    if (Number.isNaN(targetTime)) return;
+    const diff = targetTime - Date.now();
+
+    if (diff <= 0) {
+      if (daysEl) daysEl.textContent = '00';
+      if (hoursEl) hoursEl.textContent = '00';
+      if (minutesEl) minutesEl.textContent = '00';
+      if (secondsEl) secondsEl.textContent = '00';
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+
+    if (daysEl) daysEl.textContent = pad(days);
+    if (hoursEl) hoursEl.textContent = pad(hours);
+    if (minutesEl) minutesEl.textContent = pad(minutes);
+    if (secondsEl) secondsEl.textContent = pad(seconds);
+  }
+
+  updateCountdown();
+  window.setInterval(updateCountdown, 1000);
+</script>

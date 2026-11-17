@@ -1,0 +1,35 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AnimatedBackground from '../components/AnimatedBackground.astro';
+import WelcomeGate from '../components/WelcomeGate.astro';
+import Hero from '../components/Hero.astro';
+import Coordinates from '../components/Coordinates.astro';
+import ItineraryAndDressCode from '../components/ItineraryAndDressCode.astro';
+import Gifts from '../components/Gifts.astro';
+import PhotoAlbum from '../components/PhotoAlbum.astro';
+import RsvpForm from '../components/RsvpForm.astro';
+import MusicPlayer from '../components/MusicPlayer.astro';
+import Toast from '../components/Toast.astro';
+import { EVENT_CONFIG } from '../config/event';
+---
+
+<Layout>
+  <AnimatedBackground />
+  <WelcomeGate />
+
+  <main>
+    <Hero />
+    <Coordinates />
+    <ItineraryAndDressCode />
+    <Gifts />
+    <PhotoAlbum />
+    <RsvpForm />
+  </main>
+
+  <footer class="border-t border-[#c89d54]/25 py-8 text-center text-xs tracking-widest text-[#4a0a13]/70 uppercase">
+    {EVENT_CONFIG.editionLabel} · {EVENT_CONFIG.celebrantName} · {EVENT_CONFIG.dateLabel}
+  </footer>
+
+  <MusicPlayer />
+  <Toast />
+</Layout>

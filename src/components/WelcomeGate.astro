@@ -1,0 +1,171 @@
+---
+import { EVENT_CONFIG } from '../config/event';
+
+const webhookUrl = import.meta.env.PUBLIC_SHEETS_WEBHOOK_URL ?? '';
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
+---
+
+<section
+  id="welcome-gate"
+  data-webhook-url={webhookUrl}
+  data-supabase-url={supabaseUrl}
+  data-supabase-key={supabaseAnonKey}
+  class="fixed inset-0 z-40 flex items-center justify-center bg-[#2d050b]/95 px-5 py-8 transition-all duration-700"
+  aria-label="Sobre digital de bienvenida"
+>
+  <div
+    class="pointer-events-none absolute inset-0 opacity-70"
+    style="background: radial-gradient(circle at 50% 28%, rgba(200, 157, 84, 0.22), transparent 52%), radial-gradient(circle at 20% 80%, rgba(155, 27, 48, 0.35), transparent 48%);"
+  >
+  </div>
+
+  <div class="royal-glass-dark relative w-full max-w-md rounded-3xl p-7 text-center text-[#faf5ec] sm:p-10">
+    <div class="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#e5c98b]/60 bg-[#7a1320]/60 shadow-inner">
+      <span class="font-serif text-3xl font-semibold tracking-widest text-[#e5c98b]">
+        {EVENT_CONFIG.initials}
+      </span>
+    </div>
+
+    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-[#e5c98b]">
+      Pase VIP · {EVENT_CONFIG.editionLabel}
+    </p>
+
+    <h1 class="mt-3 font-serif text-4xl font-semibold tracking-wide text-[#faf5ec] sm:text-5xl">
+      {EVENT_CONFIG.celebrantName}
+    </h1>
+
+    <p class="mt-2 text-sm text-[#f3e8d2]/80">
+      {EVENT_CONFIG.dateLabel}
+    </p>
+
+    <div class="gold-divider my-6"></div>
+
+    <form id="welcome-gate-form" class="space-y-4 text-left">
+      <label for="gate-guest-name" class="block text-center text-sm font-medium text-[#f3e8d2]">
+        Escribe tu nombre y apellido para abrir tu invitación
+      </label>
+
+      <input
+        id="gate-guest-name"
+        name="guestName"
+        type="text"
+        required
+        minlength="2"
+        autocomplete="name"
+        placeholder="Tu nombre y apellido"
+        class="w-full rounded-xl border border-[#e5c98b]/40 bg-[#faf5ec]/10 px-4 py-3.5 text-center text-base text-[#faf5ec] placeholder-[#f3e8d2]/45 outline-none transition focus:border-[#e5c98b] focus:bg-[#faf5ec]/15"
+      />
+
+      <p id="gate-error" class="hidden text-center text-xs text-[#f6b8b8]">
+        Por favor escribe tu nombre y apellido para continuar.
+      </p>
+
+      <button
+        type="submit"
+        class="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#b8893a] via-[#e5c98b] to-[#b8893a] px-6 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-[#3a070f] shadow-lg transition hover:brightness-105 active:scale-[0.99]"
+      >
+        Abrir Invitación
+      </button>
+    </form>
+  </div>
+</section>
+
+<script>
+  import confetti from 'canvas-confetti';
+  import {
+    getSavedGuestName,
+    isAlreadyRegistered,
+    markRegistered,
+    postToSheetsWebhook,
+    saveGuestName,
+  } from '../services/sheets';
+  import { getSupabaseClient, registerGuestInSupabase } from '../services/supabase';
+
+  const gate = document.getElementById('welcome-gate');
+  const form = document.getElementById('welcome-gate-form') as HTMLFormElement | null;
+  const input = document.getElementById('gate-guest-name') as HTMLInputElement | null;
+  const errorEl = document.getElementById('gate-error');
+
+  function applyGuestGreeting(name: string) {
+    const heroGreeting = document.getElementById('hero-guest-greeting');
+    if (heroGreeting) {
+      heroGreeting.textContent = `¡Hola, ${name}! Nos encantaría celebrar contigo`;
+    }
+
+    const rsvpNameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
+    if (rsvpNameInput && !rsvpNameInput.value) {
+      rsvpNameInput.value = name;
+    }
+
+    const albumAuthorInput = document.getElementById('album-author') as HTMLInputElement | null;
+    if (albumAuthorInput && !albumAuthorInput.value) {
+      albumAuthorInput.value = name;
+    }
+  }
+
+  function unlockInvitation(withConfetti: boolean) {
+    document.body.classList.remove('gate-locked');
+    if (gate) {
+      gate.classList.add('pointer-events-none', 'opacity-0', 'scale-105');
+      window.setTimeout(() => {
+        gate.style.display = 'none';
+      }, 650);
+    }
+
+    if (withConfetti) {
+      confetti({
+        particleCount: 90,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
+      });
+    }
+  }
+
+  const existingName = getSavedGuestName();
+  if (existingName) {
+    applyGuestGreeting(existingName);
+    document.body.classList.remove('gate-locked');
+    if (gate) {
+      gate.style.display = 'none';
+    }
+  }
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const nombre = input?.value.trim() ?? '';
+
+    if (nombre.length < 2) {
+      errorEl?.classList.remove('hidden');
+      input?.focus();
+      return;
+    }
+
+    errorEl?.classList.add('hidden');
+    saveGuestName(nombre);
+    applyGuestGreeting(nombre);
+    unlockInvitation(true);
+    window.dispatchEvent(new CustomEvent('xv:open-invitation'));
+
+    if (!isAlreadyRegistered()) {
+      const webhookUrl = gate?.dataset.webhookUrl ?? '';
+      const supabaseUrl = gate?.dataset.supabaseUrl ?? '';
+      const supabaseKey = gate?.dataset.supabaseKey ?? '';
+      const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+
+      markRegistered();
+      void registerGuestInSupabase(sbClient, {
+        nombre,
+        asistencia: 'Abrió invitación',
+        acompanantes: 0,
+        dispositivo: navigator.userAgent,
+      });
+      void postToSheetsWebhook(webhookUrl, {
+        nombre,
+        asistencia: 'Abrió invitación',
+        dispositivo: navigator.userAgent,
+      });
+    }
+  });
+</script>
