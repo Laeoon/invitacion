@@ -5,7 +5,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
 const audioSrc = `${baseUrl}audio/cancion.mp3`;
 ---
 
-<div class="fixed right-4 bottom-5 z-30">
+<div transition:persist="royal-music" class="fixed right-4 bottom-5 z-30">
   <audio id="bg-music-audio" src={audioSrc} loop preload="none"></audio>
 
   <button

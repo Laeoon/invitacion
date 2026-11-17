@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 import 'aos/dist/aos.css';
 import { EVENT_CONFIG } from '../config/event';
@@ -30,8 +31,9 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
       rel="stylesheet"
     />
     <title>{title}</title>
+    <ClientRouter />
   </head>
-  <body class="gate-locked min-h-screen antialiased selection:bg-[#9b1b30]/20 selection:text-[#4a0a13]">
+  <body class="min-h-screen antialiased selection:bg-[#9b1b30]/20 selection:text-[#4a0a13]">
     <div
       class="pointer-events-none fixed inset-0 -z-10 opacity-90"
       style="background: radial-gradient(circle at 15% 12%, rgba(155, 27, 48, 0.08), transparent 42%), radial-gradient(circle at 85% 22%, rgba(200, 157, 84, 0.14), transparent 45%), radial-gradient(circle at 50% 85%, rgba(122, 19, 32, 0.07), transparent 50%);"
@@ -43,12 +45,16 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
     <script>
       import AOS from 'aos';
 
-      AOS.init({
-        duration: 850,
-        easing: 'ease-out-cubic',
-        once: true,
-        offset: 50,
-      });
+      function initAos() {
+        AOS.init({
+          duration: 850,
+          easing: 'ease-out-cubic',
+          once: true,
+          offset: 50,
+        });
+      }
+
+      document.addEventListener('astro:page-load', initAos);
     </script>
   </body>
 </html>

@@ -58,42 +58,52 @@ import RoseOrnament from './RoseOrnament.astro';
 </header>
 
 <script>
-  const box = document.getElementById('countdown-box');
-  const daysEl = document.getElementById('cd-days');
-  const hoursEl = document.getElementById('cd-hours');
-  const minutesEl = document.getElementById('cd-minutes');
-  const secondsEl = document.getElementById('cd-seconds');
-
-  const targetIso = box?.dataset.targetDate ?? '';
-  const targetTime = new Date(targetIso).getTime();
+  let countdownInterval: number | undefined;
 
   function pad(value: number): string {
     return String(Math.max(0, value)).padStart(2, '0');
   }
 
-  function updateCountdown() {
-    if (Number.isNaN(targetTime)) return;
-    const diff = targetTime - Date.now();
+  function initCountdown() {
+    window.clearInterval(countdownInterval);
 
-    if (diff <= 0) {
-      if (daysEl) daysEl.textContent = '00';
-      if (hoursEl) hoursEl.textContent = '00';
-      if (minutesEl) minutesEl.textContent = '00';
-      if (secondsEl) secondsEl.textContent = '00';
-      return;
+    const box = document.getElementById('countdown-box');
+    if (!box) return;
+
+    const daysEl = document.getElementById('cd-days');
+    const hoursEl = document.getElementById('cd-hours');
+    const minutesEl = document.getElementById('cd-minutes');
+    const secondsEl = document.getElementById('cd-seconds');
+
+    const targetIso = box.dataset.targetDate ?? '';
+    const targetTime = new Date(targetIso).getTime();
+
+    function updateCountdown() {
+      if (Number.isNaN(targetTime)) return;
+      const diff = targetTime - Date.now();
+
+      if (diff <= 0) {
+        if (daysEl) daysEl.textContent = '00';
+        if (hoursEl) hoursEl.textContent = '00';
+        if (minutesEl) minutesEl.textContent = '00';
+        if (secondsEl) secondsEl.textContent = '00';
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      if (daysEl) daysEl.textContent = pad(days);
+      if (hoursEl) hoursEl.textContent = pad(hours);
+      if (minutesEl) minutesEl.textContent = pad(minutes);
+      if (secondsEl) secondsEl.textContent = pad(seconds);
     }
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    const seconds = Math.floor((diff / 1000) % 60);
-
-    if (daysEl) daysEl.textContent = pad(days);
-    if (hoursEl) hoursEl.textContent = pad(hours);
-    if (minutesEl) minutesEl.textContent = pad(minutes);
-    if (secondsEl) secondsEl.textContent = pad(seconds);
+    updateCountdown();
+    countdownInterval = window.setInterval(updateCountdown, 1000);
   }
 
-  updateCountdown();
-  window.setInterval(updateCountdown, 1000);
+  document.addEventListener('astro:page-load', initCountdown);
 </script>

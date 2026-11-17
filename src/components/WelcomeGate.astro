@@ -82,90 +82,100 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
   } from '../services/sheets';
   import { getSupabaseClient, registerGuestInSupabase } from '../services/supabase';
 
-  const gate = document.getElementById('welcome-gate');
-  const form = document.getElementById('welcome-gate-form') as HTMLFormElement | null;
-  const input = document.getElementById('gate-guest-name') as HTMLInputElement | null;
-  const errorEl = document.getElementById('gate-error');
+  function initWelcomeGate() {
+    const gate = document.getElementById('welcome-gate');
+    if (!gate) return;
 
-  function applyGuestGreeting(name: string) {
-    const heroGreeting = document.getElementById('hero-guest-greeting');
-    if (heroGreeting) {
-      heroGreeting.textContent = `¡Hola, ${name}! Nos encantaría celebrar contigo`;
+    const form = document.getElementById('welcome-gate-form') as HTMLFormElement | null;
+    const input = document.getElementById('gate-guest-name') as HTMLInputElement | null;
+    const errorEl = document.getElementById('gate-error');
+
+    function applyGuestGreeting(name: string) {
+      const heroGreeting = document.getElementById('hero-guest-greeting');
+      if (heroGreeting) {
+        heroGreeting.textContent = `¡Hola, ${name}! Nos encantaría celebrar contigo`;
+      }
+
+      const rsvpNameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
+      if (rsvpNameInput && !rsvpNameInput.value) {
+        rsvpNameInput.value = name;
+      }
+
+      const albumAuthorInput = document.getElementById('album-author') as HTMLInputElement | null;
+      if (albumAuthorInput && !albumAuthorInput.value) {
+        albumAuthorInput.value = name;
+      }
     }
 
-    const rsvpNameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
-    if (rsvpNameInput && !rsvpNameInput.value) {
-      rsvpNameInput.value = name;
+    function unlockInvitation(withConfetti: boolean) {
+      document.body.classList.remove('gate-locked');
+      if (gate) {
+        gate.classList.add('pointer-events-none', 'opacity-0', 'scale-105');
+        window.setTimeout(() => {
+          gate.style.display = 'none';
+        }, 650);
+      }
+
+      if (withConfetti) {
+        confetti({
+          particleCount: 90,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
+        });
+      }
     }
 
-    const albumAuthorInput = document.getElementById('album-author') as HTMLInputElement | null;
-    if (albumAuthorInput && !albumAuthorInput.value) {
-      albumAuthorInput.value = name;
-    }
-  }
-
-  function unlockInvitation(withConfetti: boolean) {
-    document.body.classList.remove('gate-locked');
-    if (gate) {
-      gate.classList.add('pointer-events-none', 'opacity-0', 'scale-105');
-      window.setTimeout(() => {
-        gate.style.display = 'none';
-      }, 650);
-    }
-
-    if (withConfetti) {
-      confetti({
-        particleCount: 90,
-        spread: 75,
-        origin: { y: 0.6 },
-        colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
-      });
-    }
-  }
-
-  const existingName = getSavedGuestName();
-  if (existingName) {
-    applyGuestGreeting(existingName);
-    document.body.classList.remove('gate-locked');
-    if (gate) {
+    const existingName = getSavedGuestName();
+    if (existingName) {
+      applyGuestGreeting(existingName);
+      document.body.classList.remove('gate-locked');
       gate.style.display = 'none';
-    }
-  }
-
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const nombre = input?.value.trim() ?? '';
-
-    if (nombre.length < 2) {
-      errorEl?.classList.remove('hidden');
-      input?.focus();
       return;
     }
 
-    errorEl?.classList.add('hidden');
-    saveGuestName(nombre);
-    applyGuestGreeting(nombre);
-    unlockInvitation(true);
-    window.dispatchEvent(new CustomEvent('xv:open-invitation'));
+    document.body.classList.add('gate-locked');
 
-    if (!isAlreadyRegistered()) {
-      const webhookUrl = gate?.dataset.webhookUrl ?? '';
-      const supabaseUrl = gate?.dataset.supabaseUrl ?? '';
-      const supabaseKey = gate?.dataset.supabaseKey ?? '';
-      const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const nombre = input?.value.trim() ?? '';
 
-      markRegistered();
-      void registerGuestInSupabase(sbClient, {
-        nombre,
-        asistencia: 'Abrió invitación',
-        acompanantes: 0,
-        dispositivo: navigator.userAgent,
-      });
-      void postToSheetsWebhook(webhookUrl, {
-        nombre,
-        asistencia: 'Abrió invitación',
-        dispositivo: navigator.userAgent,
+        if (nombre.length < 2) {
+          errorEl?.classList.remove('hidden');
+          input?.focus();
+          return;
+        }
+
+        errorEl?.classList.add('hidden');
+        saveGuestName(nombre);
+        applyGuestGreeting(nombre);
+        unlockInvitation(true);
+        window.dispatchEvent(new CustomEvent('xv:open-invitation'));
+
+        if (!isAlreadyRegistered()) {
+          const webhookUrl = gate.dataset.webhookUrl ?? '';
+          const supabaseUrl = gate.dataset.supabaseUrl ?? '';
+          const supabaseKey = gate.dataset.supabaseKey ?? '';
+          const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+
+          markRegistered();
+          void registerGuestInSupabase(sbClient, {
+            nombre,
+            asistencia: 'Abrió invitación',
+            acompanantes: 0,
+            dispositivo: navigator.userAgent,
+          });
+          void postToSheetsWebhook(webhookUrl, {
+            nombre,
+            asistencia: 'Abrió invitación',
+            dispositivo: navigator.userAgent,
+          });
+        }
       });
     }
-  });
+  }
+
+  document.addEventListener('astro:page-load', initWelcomeGate);
 </script>

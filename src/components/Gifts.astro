@@ -42,21 +42,27 @@ import RoseOrnament from './RoseOrnament.astro';
 </section>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>('.copy-bank-btn');
+  function initGiftCopyButtons() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.copy-bank-btn');
 
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const value = btn.dataset.copyValue ?? '';
-      if (!value) return;
+    buttons.forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = 'true';
+      btn.addEventListener('click', async () => {
+        const value = btn.dataset.copyValue ?? '';
+        if (!value) return;
 
-      try {
-        await navigator.clipboard.writeText(value);
-        const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
-        showToast?.('Datos copiados al portapapeles');
-      } catch {
-        const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
-        showToast?.('No se pudo copiar automáticamente');
-      }
+        try {
+          await navigator.clipboard.writeText(value);
+          const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+          showToast?.('Datos copiados al portapapeles');
+        } catch {
+          const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+          showToast?.('No se pudo copiar automáticamente');
+        }
+      });
     });
-  });
+  }
+
+  document.addEventListener('astro:page-load', initGiftCopyButtons);
 </script>

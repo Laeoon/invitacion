@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AnimatedBackground from '../components/AnimatedBackground.astro';
+import PhotoAlbum from '../components/PhotoAlbum.astro';
+import MusicPlayer from '../components/MusicPlayer.astro';
+import Toast from '../components/Toast.astro';
+import { EVENT_CONFIG } from '../config/event';
+
+const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={`Álbum Polaroid — ${EVENT_CONFIG.celebrantName}`}>
+  <AnimatedBackground />
+
+  <nav class="px-5 pt-6">
+    <div class="mx-auto flex max-w-5xl items-center justify-between">
+      <a
+        href={baseUrl}
+        class="inline-flex items-center gap-2 rounded-full border border-[#c89d54]/50 bg-[#faf5ec]/85 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#4a0a13] shadow-sm backdrop-blur-md transition hover:bg-[#f3e8d2]"
+      >
+        ← Volver a la Invitación
+      </a>
+
+      <span class="font-serif text-lg font-semibold text-[#7a1320]">
+        {EVENT_CONFIG.initials} · {EVENT_CONFIG.editionLabel}
+      </span>
+    </div>
+  </nav>
+
+  <main>
+    <PhotoAlbum />
+  </main>
+
+  <footer class="border-t border-[#c89d54]/25 py-8 text-center text-xs tracking-widest text-[#4a0a13]/70 uppercase">
+    {EVENT_CONFIG.editionLabel} · {EVENT_CONFIG.celebrantName} · {EVENT_CONFIG.dateLabel}
+  </footer>
+
+  <MusicPlayer />
+  <Toast />
+</Layout>

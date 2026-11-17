@@ -5,7 +5,7 @@ const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 ---
 
-<section id="album" class="px-5 py-12 sm:py-16">
+<section id="album" class="px-4 py-8 pb-20 sm:px-6 sm:py-12 sm:pb-24">
   <div
     id="album-container"
     data-supabase-url={supabaseUrl}
@@ -16,12 +16,12 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
       <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
         Recuerdos de la Fiesta
       </p>
-      <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-5xl">
-        Álbum de Fotos
-      </h2>
+      <h1 class="mt-2 font-serif text-4xl font-semibold text-[#4a0a13] sm:text-5xl">
+        Muro Polaroid
+      </h1>
       <RoseOrnament compact />
       <p class="mx-auto max-w-lg text-sm text-[#2b181b]/75 sm:text-base">
-        Sube tus mejores momentos de la noche y descarga los recuerdos compartidos por todos los invitados.
+        Captura un momento, deja tu mensaje y descarga las Polaroids compartidas de la noche.
       </p>
     </div>
 
@@ -43,20 +43,20 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
         <div>
           <label for="album-caption" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
-            Mensaje corto (opcional)
+            Mensaje en la Polaroid
           </label>
           <input
             id="album-caption"
             type="text"
             maxlength="120"
-            placeholder="Ej. En la pista con Arianna"
+            placeholder="Ej. ¡Feliz cumpleaños Arianna!"
             class="mt-1.5 w-full rounded-xl border border-[#c89d54]/50 bg-[#faf5ec]/90 px-4 py-2.5 text-sm text-[#2b181b] outline-none transition focus:border-[#9b1b30]"
           />
         </div>
 
         <div>
           <label for="album-file" class="block text-xs font-semibold uppercase tracking-wider text-[#4a0a13]">
-            Elige tu foto
+            Elige o toma tu foto
           </label>
           <input
             id="album-file"
@@ -67,23 +67,40 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
           />
         </div>
 
+        <div id="album-preview-box" class="hidden justify-center">
+          <div class="w-44 rounded-sm border border-[#e5c98b]/60 bg-[#fffdf8] p-2 pb-4 shadow-md">
+            <img id="album-preview-img" src="" alt="Vista previa" class="aspect-square w-full object-cover" />
+            <p class="mt-2 text-center font-serif text-xs italic text-[#4a0a13]/80">Vista previa Polaroid</p>
+          </div>
+        </div>
+
         <button
           id="album-submit-btn"
           type="submit"
           class="w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#b8893a] via-[#d4af37] to-[#b8893a] px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-[#3a070f] shadow-md transition hover:brightness-105"
         >
-          Subir Foto al Álbum
+          Revelar y Subir Polaroid
         </button>
       </form>
     </div>
 
-    <div id="album-empty" class="mt-8 text-center text-sm text-[#4a0a13]/70">
-      Aún no hay fotos en el álbum. ¡Sé el primero en compartir un recuerdo!
+    <div class="mt-10 flex items-center justify-between px-1">
+      <h2 class="font-serif text-2xl font-semibold text-[#4a0a13]">Galería</h2>
+      <span
+        id="album-count-badge"
+        class="rounded-full border border-[#c89d54]/50 bg-[#f3e8d2]/80 px-3 py-1 text-xs font-semibold text-[#7a1320]"
+      >
+        0 Polaroids
+      </span>
+    </div>
+
+    <div id="album-empty" class="mt-6 text-center text-sm text-[#4a0a13]/70">
+      Aún no hay fotos en el álbum. ¡Sé el primero en compartir una Polaroid!
     </div>
 
     <div
       id="album-grid"
-      class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+      class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
     >
     </div>
   </div>
@@ -91,24 +108,54 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 <div
   id="album-lightbox"
-  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4 backdrop-blur-md select-none"
 >
-  <div class="relative max-h-[90vh] max-w-3xl text-center">
+  <button
+    id="lightbox-prev"
+    type="button"
+    aria-label="Foto anterior"
+    class="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white/15 px-3.5 py-2 text-lg font-bold text-white transition hover:bg-white/25 sm:left-6"
+  >
+    ‹
+  </button>
+
+  <div class="relative flex max-h-[92vh] w-full max-w-md flex-col items-center">
     <button
       id="lightbox-close"
       type="button"
-      class="absolute -top-10 right-0 cursor-pointer rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:bg-white/25"
+      class="mb-3 self-end cursor-pointer rounded-full bg-white/15 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-white hover:bg-white/25"
     >
       Cerrar
     </button>
-    <img id="lightbox-img" src="" alt="Foto del evento" class="max-h-[75vh] rounded-2xl object-contain shadow-2xl" />
-    <p id="lightbox-meta" class="mt-3 text-sm text-[#f3e8d2]"></p>
+
+    <div class="w-full rounded-sm border border-[#e5c98b]/40 bg-[#fffdf8] p-3 pb-6 shadow-2xl">
+      <img id="lightbox-img" src="" alt="Polaroid ampliada" class="max-h-[62vh] w-full object-contain bg-[#f3e8d2]/40" />
+      <p id="lightbox-caption" class="mt-3 text-center font-serif text-xl italic text-[#4a0a13]"></p>
+      <p id="lightbox-author" class="mt-1 text-center text-xs font-semibold uppercase tracking-widest text-[#9b1b30]"></p>
+    </div>
+
+    <button
+      id="lightbox-download"
+      type="button"
+      class="mt-4 cursor-pointer rounded-full border border-[#e5c98b]/60 bg-[#7a1320] px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#faf5ec] shadow-lg transition hover:bg-[#9b1b30]"
+    >
+      Descargar Foto
+    </button>
   </div>
+
+  <button
+    id="lightbox-next"
+    type="button"
+    aria-label="Foto siguiente"
+    class="absolute right-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-white/15 px-3.5 py-2 text-lg font-bold text-white transition hover:bg-white/25 sm:right-6"
+  >
+    ›
+  </button>
 </div>
 
 <script>
   import { compressImageFile } from '../services/imageCompressor';
-  import { getSavedGuestName } from '../services/sheets';
+  import { getSavedGuestName, saveGuestName } from '../services/sheets';
   import {
     fetchAlbumPhotos,
     getSupabaseClient,
@@ -116,180 +163,297 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
     type AlbumPhoto,
   } from '../services/supabase';
 
-  const container = document.getElementById('album-container');
-  const form = document.getElementById('album-upload-form') as HTMLFormElement | null;
-  const authorInput = document.getElementById('album-author') as HTMLInputElement | null;
-  const captionInput = document.getElementById('album-caption') as HTMLInputElement | null;
-  const fileInput = document.getElementById('album-file') as HTMLInputElement | null;
-  const submitBtn = document.getElementById('album-submit-btn') as HTMLButtonElement | null;
-  const grid = document.getElementById('album-grid');
-  const emptyState = document.getElementById('album-empty');
+  function initPolaroidAlbum() {
+    const container = document.getElementById('album-container');
+    if (!container) return;
 
-  const lightbox = document.getElementById('album-lightbox');
-  const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
-  const lightboxMeta = document.getElementById('lightbox-meta');
-  const lightboxClose = document.getElementById('lightbox-close');
+    const form = document.getElementById('album-upload-form') as HTMLFormElement | null;
+    const authorInput = document.getElementById('album-author') as HTMLInputElement | null;
+    const captionInput = document.getElementById('album-caption') as HTMLInputElement | null;
+    const fileInput = document.getElementById('album-file') as HTMLInputElement | null;
+    const previewBox = document.getElementById('album-preview-box');
+    const previewImg = document.getElementById('album-preview-img') as HTMLImageElement | null;
+    const submitBtn = document.getElementById('album-submit-btn') as HTMLButtonElement | null;
+    const grid = document.getElementById('album-grid');
+    const emptyState = document.getElementById('album-empty');
+    const countBadge = document.getElementById('album-count-badge');
 
-  const supabaseUrl = container?.dataset.supabaseUrl ?? '';
-  const supabaseKey = container?.dataset.supabaseKey ?? '';
-  const client = getSupabaseClient(supabaseUrl, supabaseKey);
+    const lightbox = document.getElementById('album-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    const lightboxAuthor = document.getElementById('lightbox-author');
+    const lightboxClose = document.getElementById('lightbox-close');
+    const lightboxPrev = document.getElementById('lightbox-prev');
+    const lightboxNext = document.getElementById('lightbox-next');
+    const lightboxDownload = document.getElementById('lightbox-download');
 
-  const savedName = getSavedGuestName();
-  if (savedName && authorInput) {
-    authorInput.value = savedName;
-  }
+    const supabaseUrl = container.dataset.supabaseUrl ?? '';
+    const supabaseKey = container.dataset.supabaseKey ?? '';
+    const client = getSupabaseClient(supabaseUrl, supabaseKey);
 
-  function showToast(msg: string) {
-    const fn = (window as unknown as { showToast?: (m: string) => void }).showToast;
-    fn?.(msg);
-  }
+    let currentPhotos: AlbumPhoto[] = [];
+    let activeIndex: number | null = null;
+    let previewObjectUrl: string | null = null;
+    let touchStartX = 0;
 
-  async function downloadPhoto(url: string, filename: string) {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  function renderPhotos(photos: AlbumPhoto[]) {
-    if (!grid || !emptyState) return;
-    grid.innerHTML = '';
-
-    if (photos.length === 0) {
-      emptyState.classList.remove('hidden');
-      return;
+    const savedName = getSavedGuestName();
+    if (savedName && authorInput) {
+      authorInput.value = savedName;
     }
 
-    emptyState.classList.add('hidden');
+    function showToast(msg: string) {
+      const fn = (window as unknown as { showToast?: (m: string) => void }).showToast;
+      fn?.(msg);
+    }
 
-    for (const photo of photos) {
-      const card = document.createElement('article');
-      card.className =
-        'royal-glass group flex flex-col overflow-hidden rounded-2xl transition hover:-translate-y-0.5';
-
-      const imgBtn = document.createElement('button');
-      imgBtn.type = 'button';
-      imgBtn.className = 'aspect-square w-full cursor-pointer overflow-hidden bg-[#f3e8d2]';
-
-      const img = document.createElement('img');
-      img.src = photo.url;
-      img.alt = photo.caption || `Foto compartida por ${photo.autor}`;
-      img.loading = 'lazy';
-      img.className = 'h-full w-full object-cover transition duration-500 group-hover:scale-105';
-      imgBtn.appendChild(img);
-
-      imgBtn.addEventListener('click', () => {
-        if (!lightbox || !lightboxImg || !lightboxMeta) return;
-        lightboxImg.src = photo.url;
-        lightboxMeta.textContent = photo.caption ? `${photo.autor} — ${photo.caption}` : photo.autor;
-        lightbox.classList.remove('hidden');
-        lightbox.classList.add('flex');
-      });
-
-      const body = document.createElement('div');
-      body.className = 'flex flex-1 flex-col justify-between p-3 text-left';
-
-      const info = document.createElement('div');
-      const authorEl = document.createElement('p');
-      authorEl.className = 'truncate text-xs font-semibold text-[#4a0a13]';
-      authorEl.textContent = photo.autor;
-      info.appendChild(authorEl);
-
-      if (photo.caption) {
-        const capEl = document.createElement('p');
-        capEl.className = 'mt-0.5 line-clamp-2 text-[11px] text-[#2b181b]/75';
-        capEl.textContent = photo.caption;
-        info.appendChild(capEl);
+    async function downloadPhoto(url: string, filename: string) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
-
-      const dlBtn = document.createElement('button');
-      dlBtn.type = 'button';
-      dlBtn.className =
-        'mt-2.5 w-full cursor-pointer rounded-lg border border-[#c89d54]/50 bg-[#faf5ec] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#7a1320] transition hover:bg-[#f3e8d2]';
-      dlBtn.textContent = 'Descargar';
-      dlBtn.addEventListener('click', () => {
-        void downloadPhoto(photo.url, `xv-arianna-${photo.id.slice(0, 6)}.webp`);
-      });
-
-      body.appendChild(info);
-      body.appendChild(dlBtn);
-      card.appendChild(imgBtn);
-      card.appendChild(body);
-      grid.appendChild(card);
     }
-  }
 
-  lightboxClose?.addEventListener('click', () => {
-    lightbox?.classList.add('hidden');
-    lightbox?.classList.remove('flex');
-  });
+    function updateLightboxContent(index: number) {
+      const photo = currentPhotos[index];
+      if (!photo || !lightboxImg || !lightboxCaption || !lightboxAuthor) return;
+      activeIndex = index;
+      lightboxImg.src = photo.url;
+      lightboxCaption.textContent = photo.caption ? `"${photo.caption}"` : 'Recuerdo de la noche';
+      lightboxAuthor.textContent = `Por ${photo.autor}`;
+    }
 
-  lightbox?.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
+    function openLightbox(index: number) {
+      if (!lightbox || currentPhotos.length === 0) return;
+      updateLightboxContent(index);
+      lightbox.classList.remove('hidden');
+      lightbox.classList.add('flex');
+      window.history.pushState({ polaroidLightbox: true }, '');
+    }
+
+    function closeLightbox(fromPopState = false) {
+      if (!lightbox || activeIndex === null) return;
+      activeIndex = null;
       lightbox.classList.add('hidden');
       lightbox.classList.remove('flex');
-    }
-  });
-
-  async function loadInitialPhotos() {
-    if (!client) {
-      if (emptyState) {
-        emptyState.textContent = 'Conecta Supabase (.env) para habilitar el álbum de fotos compartido.';
+      if (!fromPopState && window.history.state?.polaroidLightbox) {
+        window.history.back();
       }
-      return;
     }
-    const photos = await fetchAlbumPhotos(client);
-    renderPhotos(photos);
+
+    function stepLightbox(delta: number) {
+      if (activeIndex === null || currentPhotos.length === 0) return;
+      const next = (activeIndex + delta + currentPhotos.length) % currentPhotos.length;
+      updateLightboxContent(next);
+    }
+
+    function renderPhotos(photos: AlbumPhoto[]) {
+      currentPhotos = photos;
+      if (countBadge) {
+        countBadge.textContent = `${photos.length} ${photos.length === 1 ? 'Polaroid' : 'Polaroids'}`;
+      }
+
+      if (!grid || !emptyState) return;
+      grid.innerHTML = '';
+
+      if (photos.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      photos.forEach((photo, idx) => {
+        const tiltClass = idx % 2 === 0 ? 'sm:-rotate-1' : 'sm:rotate-1';
+        const card = document.createElement('article');
+        card.className = `group flex flex-col rounded-sm border border-[#e5c98b]/55 bg-[#fffdf8] p-3 pb-4 shadow-[0_14px_30px_-14px_rgba(74,10,19,0.3)] transition duration-300 hover:rotate-0 hover:-translate-y-1 ${tiltClass}`;
+
+        const imgBtn = document.createElement('button');
+        imgBtn.type = 'button';
+        imgBtn.className = 'aspect-square w-full cursor-pointer overflow-hidden bg-[#f3e8d2]/50';
+
+        const img = document.createElement('img');
+        img.src = photo.url;
+        img.alt = photo.caption || `Polaroid de ${photo.autor}`;
+        img.loading = 'lazy';
+        img.className = 'h-full w-full object-cover transition duration-500 group-hover:scale-105';
+        imgBtn.appendChild(img);
+
+        imgBtn.addEventListener('click', () => openLightbox(idx));
+
+        const body = document.createElement('div');
+        body.className = 'mt-3 flex flex-1 flex-col justify-between text-center';
+
+        const textWrap = document.createElement('div');
+        const capEl = document.createElement('p');
+        capEl.className = 'line-clamp-2 font-serif text-lg italic leading-snug text-[#4a0a13]';
+        capEl.textContent = photo.caption ? `"${photo.caption}"` : 'Momento inolvidable';
+        textWrap.appendChild(capEl);
+
+        const authorEl = document.createElement('p');
+        authorEl.className = 'mt-1 truncate text-[11px] font-semibold uppercase tracking-widest text-[#9b1b30]';
+        authorEl.textContent = photo.autor;
+        textWrap.appendChild(authorEl);
+
+        const dlBtn = document.createElement('button');
+        dlBtn.type = 'button';
+        dlBtn.className =
+          'mt-3 w-full cursor-pointer rounded-lg border border-[#c89d54]/55 bg-[#faf5ec] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#7a1320] transition hover:bg-[#f3e8d2]';
+        dlBtn.textContent = 'Descargar';
+        dlBtn.addEventListener('click', () => {
+          void downloadPhoto(photo.url, `polaroid-arianna-${photo.id.slice(0, 6)}.webp`);
+        });
+
+        body.appendChild(textWrap);
+        body.appendChild(dlBtn);
+        card.appendChild(imgBtn);
+        card.appendChild(body);
+        grid.appendChild(card);
+      });
+    }
+
+    if (fileInput && !fileInput.dataset.bound) {
+      fileInput.dataset.bound = 'true';
+      fileInput.addEventListener('change', () => {
+        if (previewObjectUrl) {
+          URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = null;
+        }
+
+        const file = fileInput.files?.[0];
+        if (!file || !previewBox || !previewImg) {
+          previewBox?.classList.add('hidden');
+          previewBox?.classList.remove('flex');
+          return;
+        }
+
+        previewObjectUrl = URL.createObjectURL(file);
+        previewImg.src = previewObjectUrl;
+        previewBox.classList.remove('hidden');
+        previewBox.classList.add('flex');
+      });
+    }
+
+    if (lightbox && !lightbox.dataset.bound) {
+      lightbox.dataset.bound = 'true';
+      lightboxClose?.addEventListener('click', () => closeLightbox(false));
+      lightboxPrev?.addEventListener('click', () => stepLightbox(-1));
+      lightboxNext?.addEventListener('click', () => stepLightbox(1));
+
+      lightboxDownload?.addEventListener('click', () => {
+        if (activeIndex === null) return;
+        const photo = currentPhotos[activeIndex];
+        if (photo) {
+          void downloadPhoto(photo.url, `polaroid-arianna-${photo.id.slice(0, 6)}.webp`);
+        }
+      });
+
+      lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeLightbox(false);
+      });
+
+      lightbox.addEventListener(
+        'touchstart',
+        (e) => {
+          touchStartX = e.changedTouches[0]?.clientX ?? 0;
+        },
+        { passive: true }
+      );
+
+      lightbox.addEventListener(
+        'touchend',
+        (e) => {
+          const touchEndX = e.changedTouches[0]?.clientX ?? 0;
+          const diff = touchEndX - touchStartX;
+          if (Math.abs(diff) > 45) {
+            stepLightbox(diff > 0 ? -1 : 1);
+          }
+        },
+        { passive: true }
+      );
+
+      window.addEventListener('keydown', (e) => {
+        if (activeIndex === null) return;
+        if (e.key === 'Escape') closeLightbox(false);
+        if (e.key === 'ArrowLeft') stepLightbox(-1);
+        if (e.key === 'ArrowRight') stepLightbox(1);
+      });
+
+      window.addEventListener('popstate', () => {
+        if (activeIndex !== null) {
+          closeLightbox(true);
+        }
+      });
+    }
+
+    async function loadInitialPhotos() {
+      if (!client) {
+        if (emptyState) {
+          emptyState.textContent = 'Conecta Supabase para habilitar el muro Polaroid.';
+        }
+        return;
+      }
+      const photos = await fetchAlbumPhotos(client);
+      renderPhotos(photos);
+    }
+
+    void loadInitialPhotos();
+
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!client) {
+          showToast('Falta configurar Supabase en las variables de entorno');
+          return;
+        }
+
+        const file = fileInput?.files?.[0];
+        const autor = authorInput?.value.trim() ?? '';
+        const caption = captionInput?.value.trim() ?? '';
+
+        if (!file || autor.length < 2) return;
+
+        saveGuestName(autor);
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Revelando Polaroid...';
+        }
+
+        try {
+          const compressed = await compressImageFile(file);
+          const uploaded = await uploadAlbumPhoto(client, compressed, autor, caption);
+
+          if (uploaded) {
+            showToast('¡Polaroid publicada en el muro!');
+            if (fileInput) fileInput.value = '';
+            if (captionInput) captionInput.value = '';
+            previewBox?.classList.add('hidden');
+            previewBox?.classList.remove('flex');
+            const photos = await fetchAlbumPhotos(client);
+            renderPhotos(photos);
+          } else {
+            showToast('No se pudo subir la foto. Revisa el bucket en Supabase.');
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Revelar y Subir Polaroid';
+          }
+        }
+      });
+    }
   }
 
-  void loadInitialPhotos();
-
-  form?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!client) {
-      showToast('Falta configurar Supabase en las variables de entorno');
-      return;
-    }
-
-    const file = fileInput?.files?.[0];
-    const autor = authorInput?.value.trim() ?? '';
-    const caption = captionInput?.value.trim() ?? '';
-
-    if (!file || autor.length < 2) return;
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Subiendo foto...';
-    }
-
-    try {
-      const compressed = await compressImageFile(file);
-      const uploaded = await uploadAlbumPhoto(client, compressed, autor, caption);
-
-      if (uploaded) {
-        showToast('¡Foto subida al álbum!');
-        if (fileInput) fileInput.value = '';
-        if (captionInput) captionInput.value = '';
-        const photos = await fetchAlbumPhotos(client);
-        renderPhotos(photos);
-      } else {
-        showToast('No se pudo subir la foto. Revisa el bucket en Supabase.');
-      }
-    } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Subir Foto al Álbum';
-      }
-    }
-  });
+  document.addEventListener('astro:page-load', initPolaroidAlbum);
 </script>

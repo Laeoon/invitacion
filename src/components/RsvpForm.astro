@@ -103,85 +103,94 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
   } from '../services/sheets';
   import { getSupabaseClient, registerGuestInSupabase } from '../services/supabase';
 
-  const container = document.getElementById('rsvp-container');
-  const form = document.getElementById('rsvp-form') as HTMLFormElement | null;
-  const nameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
-  const statusSelect = document.getElementById('rsvp-status') as HTMLSelectElement | null;
-  const guestsInput = document.getElementById('rsvp-guests') as HTMLInputElement | null;
-  const submitBtn = document.getElementById('rsvp-submit-btn') as HTMLButtonElement | null;
-  const confirmationBox = document.getElementById('rsvp-confirmation');
-  const confirmationDetail = document.getElementById('rsvp-confirmation-detail');
+  function initRsvpForm() {
+    const container = document.getElementById('rsvp-container');
+    if (!container) return;
 
-  const savedName = getSavedGuestName();
-  if (savedName && nameInput) {
-    nameInput.value = savedName;
-  }
+    const form = document.getElementById('rsvp-form') as HTMLFormElement | null;
+    const nameInput = document.getElementById('rsvp-name') as HTMLInputElement | null;
+    const statusSelect = document.getElementById('rsvp-status') as HTMLSelectElement | null;
+    const guestsInput = document.getElementById('rsvp-guests') as HTMLInputElement | null;
+    const submitBtn = document.getElementById('rsvp-submit-btn') as HTMLButtonElement | null;
+    const confirmationBox = document.getElementById('rsvp-confirmation');
+    const confirmationDetail = document.getElementById('rsvp-confirmation-detail');
 
-  const savedRsvp = getSavedRsvpStatus();
-  if (savedRsvp && confirmationBox && confirmationDetail) {
-    confirmationBox.classList.remove('hidden');
-    confirmationDetail.textContent = `Estado guardado: ${savedRsvp}. Si necesitas actualizarlo, envía el formulario nuevamente.`;
-  }
-
-  form?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const nombre = nameInput?.value.trim() ?? '';
-    const asistencia = statusSelect?.value ?? 'Sí asistiré';
-    const acompanantes = guestsInput?.value ?? '0';
-
-    if (nombre.length < 2) {
-      nameInput?.focus();
-      return;
+    const savedName = getSavedGuestName();
+    if (savedName && nameInput) {
+      nameInput.value = savedName;
     }
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando...';
+    const savedRsvp = getSavedRsvpStatus();
+    if (savedRsvp && confirmationBox && confirmationDetail) {
+      confirmationBox.classList.remove('hidden');
+      confirmationDetail.textContent = `Estado guardado: ${savedRsvp}. Si necesitas actualizarlo, envía el formulario nuevamente.`;
     }
 
-    saveGuestName(nombre);
-    saveRsvpStatus(`${asistencia} (${acompanantes} acompañantes)`);
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const nombre = nameInput?.value.trim() ?? '';
+        const asistencia = statusSelect?.value ?? 'Sí asistiré';
+        const acompanantes = guestsInput?.value ?? '0';
 
-    const webhookUrl = container?.dataset.webhookUrl ?? '';
-    const supabaseUrl = container?.dataset.supabaseUrl ?? '';
-    const supabaseKey = container?.dataset.supabaseKey ?? '';
-    const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+        if (nombre.length < 2) {
+          nameInput?.focus();
+          return;
+        }
 
-    await Promise.all([
-      registerGuestInSupabase(sbClient, {
-        nombre,
-        asistencia,
-        acompanantes: Number(acompanantes) || 0,
-        dispositivo: navigator.userAgent,
-      }),
-      postToSheetsWebhook(webhookUrl, {
-        nombre,
-        asistencia,
-        acompanantes,
-        dispositivo: navigator.userAgent,
-      }),
-    ]);
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Enviando...';
+        }
 
-    if (asistencia === 'Sí asistiré') {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.7 },
-        colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
+        saveGuestName(nombre);
+        saveRsvpStatus(`${asistencia} (${acompanantes} acompañantes)`);
+
+        const webhookUrl = container.dataset.webhookUrl ?? '';
+        const supabaseUrl = container.dataset.supabaseUrl ?? '';
+        const supabaseKey = container.dataset.supabaseKey ?? '';
+        const sbClient = getSupabaseClient(supabaseUrl, supabaseKey);
+
+        await Promise.all([
+          registerGuestInSupabase(sbClient, {
+            nombre,
+            asistencia,
+            acompanantes: Number(acompanantes) || 0,
+            dispositivo: navigator.userAgent,
+          }),
+          postToSheetsWebhook(webhookUrl, {
+            nombre,
+            asistencia,
+            acompanantes,
+            dispositivo: navigator.userAgent,
+          }),
+        ]);
+
+        if (asistencia === 'Sí asistiré') {
+          confetti({
+            particleCount: 100,
+            spread: 80,
+            origin: { y: 0.7 },
+            colors: ['#9b1b30', '#d4af37', '#f3e8d2', '#7a1320'],
+          });
+        }
+
+        if (confirmationBox && confirmationDetail) {
+          confirmationBox.classList.remove('hidden');
+          confirmationDetail.textContent = `${nombre} — ${asistencia} (Acompañantes: ${acompanantes}).`;
+        }
+
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Actualizar Confirmación';
+        }
+
+        const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
+        showToast?.('Confirmación registrada');
       });
     }
+  }
 
-    if (confirmationBox && confirmationDetail) {
-      confirmationBox.classList.remove('hidden');
-      confirmationDetail.textContent = `${nombre} — ${asistencia} (Acompañantes: ${acompanantes}).`;
-    }
-
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Actualizar Confirmación';
-    }
-
-    const showToast = (window as unknown as { showToast?: (msg: string) => void }).showToast;
-    showToast?.('Confirmación registrada');
-  });
+  document.addEventListener('astro:page-load', initRsvpForm);
 </script>
