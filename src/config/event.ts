@@ -77,8 +77,9 @@ export const EVENT_CONFIG = {
     headline: 'Lluvia de Sobres',
     description: 'Tu presencia es mi mejor regalo. Si deseas tener un detalle adicional, contaremos con lluvia de sobres o puedes usar los siguientes datos:',
     bankDetails: [
-      { label: 'Banco / Pago Móvil', value: '(datos bancarios)' },
-      { label: 'Titular / Cédula / RIF', value: '(titular y documento)' },
+      { label: 'Banco', value: 'Banco Venezolano de Crédito (0104)' },
+      { label: 'Cédula', value: '14241340' },
+      { label: 'Teléfono (Pago Móvil)', value: '04121453646' },
     ],
   },
 };
