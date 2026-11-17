@@ -87,6 +87,7 @@ import RoseOrnament from './RoseOrnament.astro';
         if (hoursEl) hoursEl.textContent = '00';
         if (minutesEl) minutesEl.textContent = '00';
         if (secondsEl) secondsEl.textContent = '00';
+        window.clearInterval(countdownInterval);
         return;
       }
 

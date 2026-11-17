@@ -4,7 +4,6 @@ export interface EventLocation {
   place: string;
   address: string;
   googleMapsUrl: string;
-  wazeUrl: string;
 }
 
 export interface ItineraryItem {
@@ -23,8 +22,10 @@ export const EVENT_CONFIG = {
   initials: 'AA',
   editionLabel: 'Mis XV Años',
   dateLabel: '5 de diciembre',
-  // ISO target for the live countdown timer
-  eventIsoDate: '2026-12-05T19:00:00',
+  // ISO target for the live countdown timer (9:00 PM VET)
+  eventIsoDate: '2026-12-05T21:00:00-04:00',
+  // Set to true on the day of the event to open the Polaroid album
+  albumEnabled: false,
   heroSubtitle: 'Con la bendición de Dios y mis padres, te invito a celebrar una noche inolvidable.',
   locations: [
     {
@@ -33,7 +34,6 @@ export const EVENT_CONFIG = {
       place: '(lugar)',
       address: '(dirección)',
       googleMapsUrl: 'https://maps.google.com/?q=(lugar)',
-      wazeUrl: 'https://waze.com/ul?q=(lugar)',
     },
   ] satisfies EventLocation[],
   itinerary: [

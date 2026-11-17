@@ -30,7 +30,33 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/')
   </nav>
 
   <main>
-    <PhotoAlbum />
+    {
+      EVENT_CONFIG.albumEnabled ? (
+        <PhotoAlbum />
+      ) : (
+        <section class="px-5 py-16">
+          <div class="royal-glass mx-auto max-w-lg rounded-3xl p-8 text-center sm:p-10">
+            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+              Próximamente
+            </p>
+            <h1 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-4xl">
+              Álbum Polaroid
+            </h1>
+            <p class="mt-4 text-sm leading-relaxed text-[#2b181b]/80 sm:text-base">
+              El álbum se habilitará el día de la celebración ({EVENT_CONFIG.dateLabel}) para que puedas subir y descargar tus Polaroids de la noche.
+            </p>
+            <div class="mt-6">
+              <a
+                href={baseUrl}
+                class="inline-flex items-center justify-center rounded-xl bg-[#7a1320] px-6 py-3 text-xs font-semibold uppercase tracking-widest text-[#faf5ec] transition hover:bg-[#9b1b30]"
+              >
+                Volver a la Invitación
+              </a>
+            </div>
+          </div>
+        </section>
+      )
+    }
   </main>
 
   <footer class="border-t border-[#c89d54]/25 py-8 text-center text-xs tracking-widest text-[#4a0a13]/70 uppercase">

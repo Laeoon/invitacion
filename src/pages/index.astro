@@ -28,28 +28,32 @@ const albumUrl = `${baseUrl}album`;
     <ItineraryAndDressCode />
     <Gifts />
 
-    <section id="album-cta" class="px-5 py-10 sm:py-14">
-      <div class="royal-glass mx-auto max-w-2xl rounded-3xl p-7 text-center sm:p-10" data-aos="fade-up">
-        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
-          Recuerdos de la Fiesta
-        </p>
-        <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-4xl">
-          Álbum Polaroid
-        </h2>
-        <RoseOrnament compact />
-        <p class="mx-auto max-w-md text-sm leading-relaxed text-[#2b181b]/80 sm:text-base">
-          Comparte tus fotos con un mensaje y descarga los recuerdos de la noche sin cortes de música.
-        </p>
-        <div class="mt-6">
-          <a
-            href={albumUrl}
-            class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#b8893a] via-[#d4af37] to-[#b8893a] px-7 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-[#3a070f] shadow-lg transition hover:brightness-105"
-          >
-            Ir al Álbum Polaroid →
-          </a>
-        </div>
-      </div>
-    </section>
+    {
+      EVENT_CONFIG.albumEnabled && (
+        <section id="album-cta" class="px-5 py-10 sm:py-14">
+          <div class="royal-glass mx-auto max-w-2xl rounded-3xl p-7 text-center sm:p-10" data-aos="fade-up">
+            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-[#9b1b30]">
+              Recuerdos de la Fiesta
+            </p>
+            <h2 class="mt-2 font-serif text-3xl font-semibold text-[#4a0a13] sm:text-4xl">
+              Álbum Polaroid
+            </h2>
+            <RoseOrnament compact />
+            <p class="mx-auto max-w-md text-sm leading-relaxed text-[#2b181b]/80 sm:text-base">
+              Comparte tus fotos con un mensaje y descarga los recuerdos de la noche sin cortes de música.
+            </p>
+            <div class="mt-6">
+              <a
+                href={albumUrl}
+                class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#b8893a] via-[#d4af37] to-[#b8893a] px-7 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-[#3a070f] shadow-lg transition hover:brightness-105"
+              >
+                Ir al Álbum Polaroid →
+              </a>
+            </div>
+          </div>
+        </section>
+      )
+    }
 
     <RsvpForm />
   </main>
